@@ -1,0 +1,117 @@
+# Folio
+
+**Pay in the currency you already live in. Describe the portfolio. Keep it, lock it, or send it.**
+
+Folio is a consumer brokerage whose unit of value is a *named, personal, giftable basket*
+of Coinbase tokenized stocks on Base. A folio is an ERC-721: the assets sit in a vault,
+and ownership of the basket is a token you can lock, gift, or hand over with a link.
+
+Built for the [Base Builder Quest: Tokenized Stocks](https://www.base.org/stocks).
+
+---
+
+## What is actually live
+
+Every address in [`shared/base-assets.json`](shared/base-assets.json) was read from Base
+mainnet, not copied from documentation. `scripts/verify-onchain.mjs` re-checks it.
+
+| Piece | Status |
+| --- | --- |
+| 10 Coinbase B20 stock tokens | Verified onchain — 8 decimals, multiplier `1.0`, WAD `1e18` |
+| Chainlink equity feeds | All 10 live (AAPL $321.76, NVDA $229.96 at time of writing) |
+| Execution | KyberSwap aggregator, keyless. Real calldata, one router for all legs |
+| Corridors | **BRZ** (0.10% impact), **IDRX**, **EURC**, **USDC** |
+| Wallet | Coinbase Smart Wallet, passkey sign-in, EIP-5792 batching |
+| Vault | `FolioVault.sol` — 14 passing tests |
+
+### The naira problem, stated honestly
+
+The original pitch led with *"pay in naira."* **cNGN is live on Base but has no DEX
+liquidity** — no route to USDC, WETH, or any stock, at any size (verified
+`scripts/verify-corridors.mjs`). Total supply is ~1,000,370.
+
+So Folio prices and quotes in naira, and **settles in USDC**, and says so on the balance
+card and in the order preview. Brazil and Indonesia execute natively. The moment a cNGN
+pool exists, flip `tradeable: true` in the address book and the corridor goes live with
+no other change.
+
+---
+
+## Architecture
+
+```
+shared/base-assets.json     Verified address book. Single source of truth.
+contracts/
+  contracts/FolioVault.sol  ERC-721 basket + escrow + time lock + allowlist + caps
+  test/                     14 tests: caps, locks, claims, reclaims, fee-on-transfer
+  scripts/deploy.js         Deploys and configures the allowlist, verifies it stuck
+web/
+  lib/allocator.ts          The Brain. Sentence -> weights. Allowlist-safe by construction
+  lib/quote.ts              The Executor. intent -> quote -> slippage bound -> calldata
+  lib/prices.ts             Chainlink reference prices + FX, cached
+  lib/vault.ts              Builds the single EIP-5792 batch
+  app/                      Door, create flow, folio view, claim card
+scripts/verify-*.mjs        Live checks against Base. Run these before trusting anything
+```
+
+### Three decisions worth defending
+
+**The allocator cannot name an unlisted asset.** It scores the allowlist rather than
+generating tickers, so containment is structural, not a prompt instruction. Swapping in
+an LLM means implementing the `Allocator` interface and passing through
+`enforceAllowlist` — the guarantee lives in the interface, not the model.
+
+**One tap, one batch.** Coinbase Smart Wallet executes approve → swap → swap → approve →
+approve → `createFolio` atomically via EIP-5792. The deposit uses each leg's worst-case
+output, which is guaranteed to have arrived; positive slippage stays with the user.
+
+**Share-equivalents, not token counts.** One B20 token is not permanently one share. All
+displayed quantities apply the live multiplier, so a dividend or split never silently
+changes what a holding means.
+
+---
+
+## Running it
+
+```bash
+npm --prefix web install
+npm --prefix contracts install
+```
+
+Verify the chain data before anything else:
+
+```bash
+node scripts/verify-onchain.mjs && node scripts/verify-routing.mjs
+```
+
+Deploy the vault (needs a funded Base wallet):
+
+```bash
+cp contracts/.env.example contracts/.env   # then put your key in it
+cd contracts && npx hardhat run scripts/deploy.js --network base
+cd .. && node scripts/sync-assets.mjs
+```
+
+Run the app:
+
+```bash
+npm --prefix web run dev
+```
+
+### Safety rails on the deployment
+
+The contract is unaudited, so the deploy script caps each folio at **0.5 shares per
+stock** (~$150) and **500 units per stablecoin**. Raise them with `setAsset` once you
+trust it. `pause()` stops new folios but **cannot** block withdrawals — an admin must
+never be able to trap a user's assets inside their own folio.
+
+---
+
+## Eligibility
+
+Coinbase tokenized stocks are for eligible persons outside the US. Folio checks the
+request country server-side and blocks US regions outright, then asks for an explicit
+attestation. It is a screen, not a footer.
+
+Folio is an interface and a vault. It is not an issuer, a broker, or a price oracle, and
+grants no voting or redemption rights beyond what the token itself carries.

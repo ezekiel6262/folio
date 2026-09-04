@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.local
+.env*.local
+contracts/artifacts/
+contracts/cache/
+web/.next/
+web/out/
+.vercel
+*.log

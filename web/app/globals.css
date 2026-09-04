@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: theme('colors.paper.DEFAULT');
+  color: theme('colors.ink.DEFAULT');
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Local-currency figures are the headline of this product, so they get real typographic
+   weight and tabular alignment. */
+.figure {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-black/[0.07] bg-paper-card shadow-[0_1px_2px_rgba(11,15,20,0.04),0_8px_24px_-16px_rgba(11,15,20,0.18)];
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-[#0047DB] active:scale-[0.99];
+  }
+  .btn-ghost {
+    @apply btn border border-black/10 bg-white text-ink hover:bg-black/[0.03];
+  }
+  .label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.09em] text-ink/45;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+}
+
+input[type='text'],
+input[type='number'],
+textarea {
+  @apply w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-ink outline-none transition placeholder:text-ink/30 focus:border-accent/60 focus:ring-4 focus:ring-accent/10;
+}
+
+/* Hide the number-input spinners; the amount field is a currency field, not a stepper. */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  @apply relative overflow-hidden bg-black/[0.05];
+}
+.skeleton::after {
+  @apply absolute inset-0;
+  content: '';
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.6s infinite;
+}

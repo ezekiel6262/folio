@@ -1,0 +1,7 @@
+{
+  "chainId": 8453,
+  "network": "base",
+  "folioVault": "",
+  "deployedBlock": "0",
+  "note": "Placeholder. scripts/sync-assets.mjs overwrites this with real values after contracts/scripts/deploy.js runs."
+}
