@@ -5,23 +5,203 @@
   "verifiedOn": "2026-09-04",
   "multicall3": "0xcA11bde05977b3631167028862bE2a173976CA11",
   "stocks": [
-    { "symbol": "AAPLc", "name": "Apple Inc.", "display": "Apple", "address": "0xb200000000000000000000C2e324d24d7eEcd1fb", "decimals": 8, "feed": "0x787f13dEa48Db0897CbCDD985de77809D837F988", "sector": "consumer-tech", "tags": ["hardware", "consumer", "large-cap", "quality"] },
-    { "symbol": "NVDAc", "name": "NVIDIA Corporation", "display": "NVIDIA", "address": "0xb20000000000000000000078ee7ce2fE4908108C", "decimals": 8, "feed": "0x04689a41629776563E6822F76f2e57D148d28513", "sector": "semiconductors", "tags": ["chips", "ai", "growth", "large-cap"] },
-    { "symbol": "MSFTc", "name": "Microsoft Corporation", "display": "Microsoft", "address": "0xB200000000000000000000Ab99cFa739E253872B", "decimals": 8, "feed": "0xeB10A6c9aa7E537aEd766C08c35Dae35B321b18c", "sector": "software", "tags": ["software", "cloud", "ai", "quality", "large-cap"] },
-    { "symbol": "GOOGLc", "name": "Alphabet Inc.", "display": "Alphabet", "address": "0xb2000000000000000000002D0BA3164cc74f58B7", "decimals": 8, "feed": "0x5bF49E0ffA937CE2FfF033c739aD7C634c4D34F2", "sector": "internet", "tags": ["ads", "search", "ai", "large-cap"] },
-    { "symbol": "METAc", "name": "Meta Platforms Inc.", "display": "Meta", "address": "0xb2000000000000000000008bC8786B856E61707C", "decimals": 8, "feed": "0x6526aE6797A76123638b863AeE4dD27Ba4E4b27D", "sector": "internet", "tags": ["ads", "social", "ai", "large-cap"] },
-    { "symbol": "AMZNc", "name": "Amazon.com Inc.", "display": "Amazon", "address": "0xb200000000000000000000d9192b6B456483C2E8", "decimals": 8, "feed": "0x06A8E4b3aBB3B7543d8396FB2B763d22820cB295", "sector": "internet", "tags": ["retail", "cloud", "consumer", "large-cap"] },
-    { "symbol": "TSLAc", "name": "Tesla Inc.", "display": "Tesla", "address": "0xb2000000000000000000001e800a7f5189430cD0", "decimals": 8, "feed": "0xFaf869185383a24F8cb00e27BdA6b63B9905DCb4", "sector": "auto", "tags": ["ev", "energy", "growth", "volatile"] },
-    { "symbol": "MSTRc", "name": "MicroStrategy", "display": "MicroStrategy", "address": "0xb2000000000000000000004884b426556b92883d", "decimals": 8, "feed": "0xB3cE282CD188b35DA0E38D8Bc7d58e33173D202a", "sector": "software", "tags": ["bitcoin", "volatile", "software"] },
-    { "symbol": "SNDKc", "name": "SanDisk", "display": "SanDisk", "address": "0xb200000000000000000000397293Cb8cda9a10c5", "decimals": 8, "feed": "0x388b0dC46C0Fb05A74BeE0994fa5b02c6Fcca2eA", "sector": "semiconductors", "tags": ["chips", "storage", "hardware"] },
-    { "symbol": "SPCXc", "name": "SpaceX", "display": "SpaceX", "address": "0xb2000000000000000000007b9fcbd005511aCBd5", "decimals": 8, "feed": "0x6A634B235903C4ad6376892180d6fF8612e3Fa68", "sector": "aerospace", "tags": ["space", "private", "growth", "volatile"] }
+    {
+      "symbol": "AAPLc",
+      "name": "Apple Inc.",
+      "display": "Apple",
+      "address": "0xb200000000000000000000C2e324d24d7eEcd1fb",
+      "decimals": 8,
+      "feed": "0x787f13dEa48Db0897CbCDD985de77809D837F988",
+      "sector": "consumer-tech",
+      "tags": [
+        "hardware",
+        "consumer",
+        "large-cap",
+        "quality"
+      ]
+    },
+    {
+      "symbol": "NVDAc",
+      "name": "NVIDIA Corporation",
+      "display": "NVIDIA",
+      "address": "0xb20000000000000000000078ee7ce2fE4908108C",
+      "decimals": 8,
+      "feed": "0x04689a41629776563E6822F76f2e57D148d28513",
+      "sector": "semiconductors",
+      "tags": [
+        "chips",
+        "ai",
+        "growth",
+        "large-cap"
+      ]
+    },
+    {
+      "symbol": "MSFTc",
+      "name": "Microsoft Corporation",
+      "display": "Microsoft",
+      "address": "0xB200000000000000000000Ab99cFa739E253872B",
+      "decimals": 8,
+      "feed": "0xeB10A6c9aa7E537aEd766C08c35Dae35B321b18c",
+      "sector": "software",
+      "tags": [
+        "software",
+        "cloud",
+        "ai",
+        "quality",
+        "large-cap"
+      ]
+    },
+    {
+      "symbol": "GOOGLc",
+      "name": "Alphabet Inc.",
+      "display": "Alphabet",
+      "address": "0xb2000000000000000000002D0BA3164cc74f58B7",
+      "decimals": 8,
+      "feed": "0x5bF49E0ffA937CE2FfF033c739aD7C634c4D34F2",
+      "sector": "internet",
+      "tags": [
+        "ads",
+        "search",
+        "ai",
+        "large-cap"
+      ]
+    },
+    {
+      "symbol": "METAc",
+      "name": "Meta Platforms Inc.",
+      "display": "Meta",
+      "address": "0xb2000000000000000000008bC8786B856E61707C",
+      "decimals": 8,
+      "feed": "0x6526aE6797A76123638b863AeE4dD27Ba4E4b27D",
+      "sector": "internet",
+      "tags": [
+        "ads",
+        "social",
+        "ai",
+        "large-cap"
+      ]
+    },
+    {
+      "symbol": "AMZNc",
+      "name": "Amazon.com Inc.",
+      "display": "Amazon",
+      "address": "0xb200000000000000000000d9192b6B456483C2E8",
+      "decimals": 8,
+      "feed": "0x06A8E4b3aBB3B7543d8396FB2B763d22820cB295",
+      "sector": "internet",
+      "tags": [
+        "retail",
+        "cloud",
+        "consumer",
+        "large-cap"
+      ]
+    },
+    {
+      "symbol": "TSLAc",
+      "name": "Tesla Inc.",
+      "display": "Tesla",
+      "address": "0xb2000000000000000000001e800a7f5189430cD0",
+      "decimals": 8,
+      "feed": "0xFaf869185383a24F8cb00e27BdA6b63B9905DCb4",
+      "sector": "auto",
+      "tags": [
+        "ev",
+        "energy",
+        "growth",
+        "volatile"
+      ]
+    },
+    {
+      "symbol": "MSTRc",
+      "name": "MicroStrategy",
+      "display": "MicroStrategy",
+      "address": "0xb2000000000000000000004884b426556b92883d",
+      "decimals": 8,
+      "feed": "0xB3cE282CD188b35DA0E38D8Bc7d58e33173D202a",
+      "sector": "software",
+      "tags": [
+        "bitcoin",
+        "volatile",
+        "software"
+      ]
+    },
+    {
+      "symbol": "SNDKc",
+      "name": "SanDisk",
+      "display": "SanDisk",
+      "address": "0xb200000000000000000000397293Cb8cda9a10c5",
+      "decimals": 8,
+      "feed": "0x388b0dC46C0Fb05A74BeE0994fa5b02c6Fcca2eA",
+      "sector": "semiconductors",
+      "tags": [
+        "chips",
+        "storage",
+        "hardware"
+      ]
+    },
+    {
+      "symbol": "SPCXc",
+      "name": "SpaceX",
+      "display": "SpaceX",
+      "address": "0xb2000000000000000000007b9fcbd005511aCBd5",
+      "decimals": 8,
+      "feed": "0x6A634B235903C4ad6376892180d6fF8612e3Fa68",
+      "sector": "aerospace",
+      "tags": [
+        "space",
+        "private",
+        "growth",
+        "volatile"
+      ]
+    }
   ],
   "currencies": [
-    { "code": "USD", "symbol": "$", "token": "USDC", "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "decimals": 6, "tradeable": true, "locale": "en-US" },
-    { "code": "BRL", "symbol": "R$", "token": "BRZ", "address": "0xE9185Ee218cae427aF7B9764A011bb89FeA761B4", "decimals": 18, "tradeable": true, "locale": "pt-BR" },
-    { "code": "IDR", "symbol": "Rp", "token": "IDRX", "address": "0x18Bc5bcC660cf2B9cE3cd51a404aFe1a0cBD3C22", "decimals": 2, "tradeable": true, "locale": "id-ID" },
-    { "code": "EUR", "symbol": "€", "token": "EURC", "address": "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42", "decimals": 6, "tradeable": true, "locale": "de-DE" },
-    { "code": "NGN", "symbol": "₦", "token": "cNGN", "address": "0xC930784d6e14e2FC2A1F49BE1068dc40f24762D3", "decimals": 6, "tradeable": false, "settlesVia": "USD", "locale": "en-NG",
-      "note": "cNGN is live on Base but has NO DEX liquidity as of 2026-09-04 (verified: no route to USDC, WETH or any B20 at any size). Naira is a display and quoting currency; orders settle in USDC. Flip tradeable to true once a cNGN pool exists." }
+    {
+      "code": "BRL",
+      "symbol": "R$",
+      "token": "BRZ",
+      "address": "0xE9185Ee218cae427aF7B9764A011bb89FeA761B4",
+      "decimals": 18,
+      "tradeable": true,
+      "locale": "pt-BR"
+    },
+    {
+      "code": "IDR",
+      "symbol": "Rp",
+      "token": "IDRX",
+      "address": "0x18Bc5bcC660cf2B9cE3cd51a404aFe1a0cBD3C22",
+      "decimals": 2,
+      "tradeable": true,
+      "locale": "id-ID"
+    },
+    {
+      "code": "NGN",
+      "symbol": "₦",
+      "token": "cNGN",
+      "address": "0xC930784d6e14e2FC2A1F49BE1068dc40f24762D3",
+      "decimals": 6,
+      "tradeable": false,
+      "settlesVia": "USD",
+      "locale": "en-NG",
+      "note": "cNGN is live on Base but has NO DEX liquidity as of 2026-09-04 (verified: no route to USDC, WETH or any B20 at any size). Naira is a display and quoting currency; orders settle in USDC. Flip tradeable to true once a cNGN pool exists."
+    },
+    {
+      "code": "EUR",
+      "symbol": "€",
+      "token": "EURC",
+      "address": "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42",
+      "decimals": 6,
+      "tradeable": true,
+      "locale": "de-DE"
+    },
+    {
+      "code": "USD",
+      "symbol": "$",
+      "token": "USDC",
+      "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "decimals": 6,
+      "tradeable": true,
+      "locale": "en-US"
+    }
   ]
 }

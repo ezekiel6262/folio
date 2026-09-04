@@ -24,7 +24,12 @@ const ERC20_APPROVE_ABI = [
   },
 ] as const
 
-export type Call = { to: Address; data: Hex; value?: bigint }
+/**
+ * `label` exists because a batch is one confirmation on a smart wallet but N separate
+ * confirmations on an ordinary wallet. When we have to fall back, the user deserves to
+ * know which step they are signing.
+ */
+export type Call = { to: Address; data: Hex; value?: bigint; label: string }
 
 /** A claim link carries the secret in its fragment; only its hash ever goes onchain. */
 export function newClaimSecret(): { secret: Hex; claimHash: Hex } {
@@ -34,10 +39,11 @@ export function newClaimSecret(): { secret: Hex; claimHash: Hex } {
   return { secret, claimHash: keccak256(secret) }
 }
 
-export function approveCall(token: Address, spender: Address, amount: bigint): Call {
+export function approveCall(token: Address, spender: Address, amount: bigint, label: string): Call {
   return {
     to: token,
     data: encodeFunctionData({ abi: ERC20_APPROVE_ABI, functionName: 'approve', args: [spender, amount] }),
+    label,
   }
 }
 
@@ -75,10 +81,12 @@ export function buildPurchaseBatch(args: {
   }
 
   const totalIn = args.swaps.reduce((sum, s) => sum + BigInt(s.leg.amountInRaw), 0n)
-  const calls: Call[] = [approveCall(args.plan.settlementToken, router, totalIn)]
+  const calls: Call[] = [
+    approveCall(args.plan.settlementToken, router, totalIn, `Allow ${args.plan.settlementSymbol} to be swapped`),
+  ]
 
   for (const s of args.swaps) {
-    calls.push({ to: s.routerAddress, data: s.data })
+    calls.push({ to: s.routerAddress, data: s.data, label: `Buy ${s.leg.display}` })
   }
 
   const contributions = args.swaps.map((s) => ({
@@ -86,11 +94,12 @@ export function buildPurchaseBatch(args: {
     amount: BigInt(s.leg.minAmountOutRaw),
   }))
 
-  for (const c of contributions) {
-    calls.push(approveCall(c.token, vault, c.amount))
+  for (const [i, c] of contributions.entries()) {
+    calls.push(approveCall(c.token, vault, c.amount, `Allow ${args.swaps[i].leg.display} into the vault`))
   }
 
   calls.push({
+    label: `Create "${args.intent.name}"`,
     to: vault,
     data: encodeFunctionData({
       abi: folioVaultAbi,
@@ -114,6 +123,7 @@ export function claimCall(folioId: bigint, secret: Hex, vault: Address = VAULT_A
   return {
     to: vault,
     data: encodeFunctionData({ abi: folioVaultAbi, functionName: 'claim', args: [folioId, secret] }),
+    label: 'Claim this folio',
   }
 }
 
@@ -121,6 +131,7 @@ export function withdrawAllCall(folioId: bigint, to: Address, vault: Address = V
   return {
     to: vault,
     data: encodeFunctionData({ abi: folioVaultAbi, functionName: 'withdrawAll', args: [folioId, to] }),
+    label: 'Withdraw everything',
   }
 }
 

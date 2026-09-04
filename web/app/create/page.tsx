@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount, useReadContract } from 'wagmi'
-import { useSendCalls, useWaitForCallsStatus } from 'wagmi/experimental'
-import { decodeEventLog, erc20Abi, formatUnits, type Address, type Hex } from 'viem'
+import { decodeEventLog, erc20Abi, formatUnits, type Address, type Hex, type TransactionReceipt } from 'viem'
+import { useExecutor, PartialExecutionError, isUserRejection } from '@/lib/use-executor'
 import { useCurrency } from '@/components/currency-context'
 import { ConnectButton } from '@/components/connect-button'
 import { AllocationPreview } from '@/components/allocation-preview'
@@ -50,9 +50,8 @@ export default function CreatePage() {
   const [error, setError] = useState<string | null>(null)
   const [claimSecret, setClaimSecret] = useState<Hex | null>(null)
 
-  const { sendCallsAsync } = useSendCalls()
-  const [callsId, setCallsId] = useState<string | undefined>()
-  const { data: callsStatus } = useWaitForCallsStatus({ id: callsId, query: { enabled: Boolean(callsId) } })
+  const { execute, progress } = useExecutor()
+  const [receipts, setReceipts] = useState<TransactionReceipt[] | null>(null)
 
   const presets = PRESETS[code] ?? PRESETS.USD
   const amountNum = Number(amount)
@@ -73,6 +72,8 @@ export default function CreatePage() {
   const needed = planned ? planned.plan.amountSettlementHuman : 0
   const shortfall = settleBalance !== null && planned ? needed - settleBalance : 0
   const canAfford = settleBalance === null || shortfall <= 0
+  // approve settlement + one swap per leg + one vault approval per leg + createFolio
+  const steps = planned ? planned.plan.legs.length * 2 + 2 : 0
 
   async function runAllocate() {
     setError(null)
@@ -119,7 +120,7 @@ export default function CreatePage() {
     }
   }
 
-  async function execute() {
+  async function runExecute() {
     if (!planned || !allocation || !address) return
     setError(null)
     setBusy('execute')
@@ -160,8 +161,8 @@ export default function CreatePage() {
         },
       })
 
-      const result = await sendCallsAsync({ calls })
-      setCallsId(typeof result === 'string' ? result : result.id)
+      const outcome = await execute(calls)
+      setReceipts(outcome.receipts)
     } catch (e) {
       setError(friendlyError(e as Error))
       setBusy(null)
@@ -170,7 +171,6 @@ export default function CreatePage() {
 
   // Once the batch lands, pull the new folio id out of the FolioCreated log.
   const newFolioId = useMemo(() => {
-    const receipts = callsStatus?.receipts
     if (!receipts?.length) return null
     for (const r of receipts) {
       for (const log of r.logs ?? []) {
@@ -190,7 +190,7 @@ export default function CreatePage() {
       }
     }
     return null
-  }, [callsStatus])
+  }, [receipts])
 
   // Navigation is a side effect; doing it during render trips React 19 strict mode.
   useEffect(() => {
@@ -204,7 +204,7 @@ export default function CreatePage() {
     return (
       <div className="pt-10">
         <h1 className="text-[24px] font-semibold tracking-tight">Sign in to build a folio</h1>
-        <p className="mt-2 text-[15px] text-ink/60">A passkey is all it takes. No seed phrase.</p>
+        <p className="mt-2 text-[15px] text-ink/60">A passkey takes seconds, or connect a wallet you already have.</p>
         <div className="mt-6">
           <ConnectButton full />
         </div>
@@ -330,19 +330,39 @@ export default function CreatePage() {
             </p>
           )}
 
+          {progress?.mode === 'sequential' && (
+            <div className="card mt-4 p-4">
+              <div className="flex items-baseline justify-between">
+                <p className="text-[13.5px] font-semibold">{progress.label}</p>
+                <p className="figure text-[12.5px] text-ink/50">
+                  {progress.current + 1} of {progress.total}
+                </p>
+              </div>
+              <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-black/[0.06]">
+                <div
+                  className="h-full bg-accent transition-all"
+                  style={{ width: `${((progress.current + 1) / progress.total) * 100}%` }}
+                />
+              </div>
+              <p className="mt-2.5 text-[12px] leading-relaxed text-ink/45">
+                This wallet signs each step separately. Keep confirming until the folio is created.
+              </p>
+            </div>
+          )}
+
           <button
-            onClick={execute}
-            disabled={busy === 'execute' || Boolean(callsId) || !IS_DEPLOYED || !canAfford}
+            onClick={runExecute}
+            disabled={busy === 'execute' || Boolean(receipts) || !IS_DEPLOYED || !canAfford}
             className="btn-primary mt-4 w-full"
           >
-            {busy === 'execute' || callsId
+            {busy === 'execute' || receipts
               ? 'Confirming…'
               : gift.mode === 'gift'
                 ? `Send ${formatLocal(amountNum, code, { compact: true })}`
                 : `Buy ${formatLocal(amountNum, code, { compact: true })}`}
           </button>
           <p className="mt-2.5 text-center text-[12px] text-ink/40">
-            One tap. {planned.plan.legs.length * 2 + 2} calls batched into a single confirmation.
+            {steps} steps — one confirmation on a Smart Wallet, {steps} on other wallets.
           </p>
         </>
       )}
@@ -358,10 +378,13 @@ function suggestName(alloc: Allocation) {
 }
 
 function friendlyError(e: Error) {
+  // A run that stopped part way through is the one case where the user has real money
+  // sitting somewhere unexpected. Say exactly where it is.
+  if (e instanceof PartialExecutionError) {
+    return `${e.message} The steps that already went through are done — any shares you bought are sitting in your wallet, not in a folio. You can start again with a smaller amount, or use a Coinbase Smart Wallet to do it in one confirmation.`
+  }
   const m = e.message ?? ''
-  if (/user rejected|denied/i.test(m)) return 'You cancelled the confirmation.'
+  if (isUserRejection(e)) return 'You cancelled the confirmation.'
   if (/insufficient/i.test(m)) return 'Not enough balance to cover this order and gas.'
-  if (/atomic|not supported|5792/i.test(m))
-    return 'This wallet cannot batch calls. Folio needs a Coinbase Smart Wallet for the one-tap flow.'
   return m || 'Something went wrong.'
 }

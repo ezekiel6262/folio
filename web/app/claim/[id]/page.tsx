@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { useSendCalls } from 'wagmi/experimental'
+import { useExecutor, isUserRejection } from '@/lib/use-executor'
 import { useQuery } from '@tanstack/react-query'
 import type { Hex } from 'viem'
 import { useCurrency } from '@/components/currency-context'
@@ -22,7 +22,7 @@ export default function ClaimPage({ params }: { params: Promise<{ id: string }> 
   const router = useRouter()
   const { address, isConnected } = useAccount()
   const { code, usdToLocal } = useCurrency()
-  const { sendCallsAsync } = useSendCalls()
+  const { execute } = useExecutor()
 
   const [secret, setSecret] = useState<Hex | null>(null)
   const [claiming, setClaiming] = useState(false)
@@ -46,14 +46,14 @@ export default function ClaimPage({ params }: { params: Promise<{ id: string }> 
     setError(null)
     setClaiming(true)
     try {
-      await sendCallsAsync({ calls: [claimCall(BigInt(folio.id), secret, VAULT_ADDRESS)] })
+      await execute([claimCall(BigInt(folio.id), secret, VAULT_ADDRESS)])
       setTimeout(async () => {
         await refetch()
         router.push(`/folio/${folio.id}`)
       }, 3500)
     } catch (e) {
       const m = (e as Error).message
-      setError(/rejected|denied/i.test(m) ? 'You cancelled the confirmation.' : m)
+      setError(isUserRejection(e) ? 'You cancelled the confirmation.' : m)
       setClaiming(false)
     }
   }
@@ -126,7 +126,7 @@ export default function ClaimPage({ params }: { params: Promise<{ id: string }> 
           <>
             <ConnectButton full />
             <p className="mt-3 text-center text-[12.5px] text-ink/45">
-              Sign in with a passkey to accept it. No app, no seed phrase.
+              Sign in to accept it — a passkey takes seconds, or use a wallet you already have.
             </p>
           </>
         ) : (

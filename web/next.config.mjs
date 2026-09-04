@@ -16,14 +16,10 @@ const UNUSED_OPTIONAL_DEPS = [
 // still drags every other wallet SDK through the compiler, which cost ~2 minutes per
 // cold build and megabytes of dead client code. These are the SDKs behind connectors we
 // never construct; @coinbase/wallet-sdk is deliberately absent from the list.
-const UNUSED_WALLET_SDKS = [
-  '@metamask/sdk',
-  '@walletconnect/ethereum-provider',
-  '@base-org/account',
-  '@coinbase/cdp-sdk',
-  '@gemini-wallet/core',
-  'porto',
-]
+// @walletconnect and @coinbase/wallet-sdk are deliberately absent: those connectors are
+// actually offered. The MetaMask SDK is stubbed because MetaMask reaches us through the
+// generic injected connector (EIP-6963), which needs no SDK at all.
+const UNUSED_WALLET_SDKS = ['@metamask/sdk', '@base-org/account', '@coinbase/cdp-sdk', '@gemini-wallet/core', 'porto']
 
 const nextConfig = {
   reactStrictMode: true,

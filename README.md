@@ -1,6 +1,6 @@
 # Folio
 
-**Pay in the currency you already live in. Describe the portfolio. Keep it, lock it, or send it.**
+**Pay in reais. Describe the portfolio. Keep it, lock it, or send it.**
 
 Folio is a consumer brokerage whose unit of value is a *named, personal, giftable basket*
 of Coinbase tokenized stocks on Base. A folio is an ERC-721: the assets sit in a vault,
@@ -20,20 +20,37 @@ mainnet, not copied from documentation. `scripts/verify-onchain.mjs` re-checks i
 | 10 Coinbase B20 stock tokens | Verified onchain — 8 decimals, multiplier `1.0`, WAD `1e18` |
 | Chainlink equity feeds | All 10 live (AAPL $321.76, NVDA $229.96 at time of writing) |
 | Execution | KyberSwap aggregator, keyless. Real calldata, one router for all legs |
-| Corridors | **BRZ** (0.10% impact), **IDRX**, **EURC**, **USDC** |
-| Wallet | Coinbase Smart Wallet, passkey sign-in, EIP-5792 batching |
+| Corridors | **BRZ** (0.10% impact, the default), **IDRX**, **EURC**, **USDC** |
+| Wallets | Coinbase Smart Wallet (passkey, one tap), any injected wallet, WalletConnect |
 | Vault | `FolioVault.sol` — 14 passing tests |
 
-### The naira problem, stated honestly
+### Wallets, and why the button says different things
+
+Only a smart wallet can batch. With a **Coinbase Smart Wallet** the whole purchase —
+approve, one swap per leg, one vault approval per leg, `createFolio` — is a single
+EIP-5792 confirmation that either lands completely or not at all.
+
+Every other wallet still works. [`lib/use-executor.ts`](web/lib/use-executor.ts) tries
+the batch, detects a wallet that cannot do it, and walks the same calls one at a time
+with a progress bar naming each step. That path is genuinely worse and the UI says so:
+if a sequential run stops halfway, `PartialExecutionError` reports how far it got, and
+the user is told their shares are sitting in their wallet rather than in a folio.
+
+WalletConnect appears only when `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is set — a button
+that cannot work is worse than no button. Get a free id at reown.com.
+
+### Why Brazil leads, and what happened to naira
 
 The original pitch led with *"pay in naira."* **cNGN is live on Base but has no DEX
 liquidity** — no route to USDC, WETH, or any stock, at any size (verified
 `scripts/verify-corridors.mjs`). Total supply is ~1,000,370.
 
-So Folio prices and quotes in naira, and **settles in USDC**, and says so on the balance
-card and in the order preview. Brazil and Indonesia execute natively. The moment a cNGN
-pool exists, flip `tradeable: true` in the address book and the corridor goes live with
-no other change.
+So the default corridor is **BRL/BRZ**, which fills at roughly 0.10% price impact and
+executes natively end to end. Naira is still a first-class display currency: Folio
+prices and quotes in it and **settles in USDC**, and says so on the balance card and in
+the order preview rather than implying it holds naira. The moment a cNGN pool exists,
+flip `tradeable: true` in the address book and the corridor goes live with no other
+change.
 
 ---
 

@@ -4,7 +4,7 @@ import { use, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { useSendCalls } from 'wagmi/experimental'
+import { useExecutor, isUserRejection } from '@/lib/use-executor'
 import { useQuery } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
 import { ShareLink } from '@/components/share-link'
@@ -22,7 +22,7 @@ export default function FolioPage({ params }: { params: Promise<{ id: string }> 
 
   const { address } = useAccount()
   const { code, usdToLocal } = useCurrency()
-  const { sendCallsAsync } = useSendCalls()
+  const { execute } = useExecutor()
   const [withdrawing, setWithdrawing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,11 +40,11 @@ export default function FolioPage({ params }: { params: Promise<{ id: string }> 
     setError(null)
     setWithdrawing(true)
     try {
-      await sendCallsAsync({ calls: [withdrawAllCall(BigInt(folio.id), address, VAULT_ADDRESS)] })
+      await execute([withdrawAllCall(BigInt(folio.id), address, VAULT_ADDRESS)])
       setTimeout(() => refetch(), 3000)
     } catch (e) {
       const m = (e as Error).message
-      setError(/rejected|denied/i.test(m) ? 'You cancelled the confirmation.' : m)
+      setError(isUserRejection(e) ? 'You cancelled the confirmation.' : m)
     } finally {
       setWithdrawing(false)
     }

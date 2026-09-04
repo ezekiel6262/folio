@@ -29,7 +29,9 @@ const CurrencyContext = createContext<Ctx | null>(null)
 const STORAGE_KEY = 'folio.currency'
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [code, setCodeState] = useState('NGN')
+  // Brazil leads: BRZ is the deepest local corridor on Base (about 0.10% price impact),
+  // so the default currency is one that actually executes onchain end to end.
+  const [code, setCodeState] = useState('BRL')
 
   useEffect(() => {
     try {

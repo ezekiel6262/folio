@@ -12,7 +12,7 @@ import { IS_DEPLOYED } from '@/lib/deployment'
 
 export default function Home() {
   const { address, isConnected } = useAccount()
-  const { code, currency, usdToLocal, prices, loading } = useCurrency()
+  const { code, currency, usdToLocal } = useCurrency()
 
   const { data, isLoading: foliosLoading } = useQuery<{ folios: FolioSummary[] }>({
     queryKey: ['folios', address],
@@ -28,7 +28,7 @@ export default function Home() {
       {!isConnected ? (
         <section className="pt-6">
           <h1 className="text-[30px] font-semibold leading-[1.12] tracking-[-0.025em]">
-            Pay in {currency.code === 'NGN' ? 'naira' : currency.code === 'BRL' ? 'reais' : currency.code === 'IDR' ? 'rupiah' : currency.code}.
+            Pay in {moneyWord(currency.code)}.
             <br />
             Describe the portfolio.
             <br />
@@ -42,7 +42,7 @@ export default function Home() {
           <div className="mt-6">
             <ConnectButton full />
             <p className="mt-3 text-center text-xs text-ink/40">
-              No seed phrase. A passkey makes the wallet.
+              Use a passkey, or connect a wallet you already have.
             </p>
           </div>
 
@@ -105,6 +105,18 @@ export default function Home() {
       )}
     </div>
   )
+}
+
+// The hero names the money the way a person would, not by ISO code.
+const MONEY_WORD: Record<string, string> = {
+  BRL: 'reais',
+  NGN: 'naira',
+  IDR: 'rupiah',
+  EUR: 'euros',
+  USD: 'dollars',
+}
+function moneyWord(code: string) {
+  return MONEY_WORD[code] ?? code
 }
 
 function Step({ n, title, body }: { n: number; title: string; body: string }) {
