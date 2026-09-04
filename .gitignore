@@ -8,3 +8,5 @@ web/.next/
 web/out/
 .vercel
 *.log
+web/tsconfig.tsbuildinfo
+*.tsbuildinfo
