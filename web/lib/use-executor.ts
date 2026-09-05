@@ -1,10 +1,12 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { useConfig, useSendTransaction } from 'wagmi'
+import { useAccount, useCapabilities, useConfig, useSendTransaction } from 'wagmi'
 import { useSendCalls } from 'wagmi/experimental'
+import { useQuery } from '@tanstack/react-query'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { waitForCallsStatus } from '@wagmi/core/experimental'
+import { base } from 'wagmi/chains'
 import type { TransactionReceipt } from 'viem'
 import type { Call } from './vault'
 
@@ -60,10 +62,42 @@ function cannotBatch(error: unknown) {
   )
 }
 
+/**
+ * Gas is sponsored only when the app has a paymaster configured AND the connected
+ * wallet can actually use one. An EOA cannot, which is another reason the smart wallet
+ * path is the one worth recommending.
+ */
+export function useSponsorship() {
+  const { isConnected } = useAccount()
+  const { data: capabilities } = useCapabilities({ query: { enabled: isConnected } })
+
+  const { data: appHasPaymaster } = useQuery({
+    queryKey: ['paymaster-status'],
+    queryFn: async () => {
+      const res = await fetch('/api/paymaster')
+      if (!res.ok) return false
+      return Boolean((await res.json()).sponsorship)
+    },
+    staleTime: Infinity,
+  })
+
+  const walletSupports = Boolean(
+    (capabilities as Record<number, { paymasterService?: { supported?: boolean } }> | undefined)?.[base.id]
+      ?.paymasterService?.supported,
+  )
+
+  return {
+    available: Boolean(appHasPaymaster) && walletSupports,
+    appHasPaymaster: Boolean(appHasPaymaster),
+    walletSupports,
+  }
+}
+
 export function useExecutor() {
   const config = useConfig()
   const { sendCallsAsync } = useSendCalls()
   const { sendTransactionAsync } = useSendTransaction()
+  const sponsorship = useSponsorship()
   const [progress, setProgress] = useState<ExecutionProgress | null>(null)
 
   const execute = useCallback(
@@ -75,6 +109,11 @@ export function useExecutor() {
         setProgress({ mode: 'batch', current: 0, total: calls.length, label: 'Confirming' })
         const result = await sendCallsAsync({
           calls: calls.map(({ to, data, value }) => ({ to, data, value })),
+          // Our own proxy, never the paymaster URL itself. The wallet fetches
+          // sponsorship data through it and the user pays no gas.
+          ...(sponsorship.available
+            ? { capabilities: { paymasterService: { url: `${window.location.origin}/api/paymaster` } } }
+            : {}),
         })
         const id = typeof result === 'string' ? result : result.id
         const status = await waitForCallsStatus(config, { id, timeout: 180_000 })
@@ -118,8 +157,8 @@ export function useExecutor() {
       setProgress(null)
       return { receipts, mode: 'sequential' }
     },
-    [config, sendCallsAsync, sendTransactionAsync],
+    [config, sendCallsAsync, sendTransactionAsync, sponsorship.available],
   )
 
-  return { execute, progress, reset: () => setProgress(null) }
+  return { execute, progress, sponsorship, reset: () => setProgress(null) }
 }

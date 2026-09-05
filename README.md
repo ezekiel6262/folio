@@ -39,6 +39,27 @@ the user is told their shares are sitting in their wallet rather than in a folio
 WalletConnect appears only when `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is set — a button
 that cannot work is worse than no button. Get a free id at reown.com.
 
+### Gas, which is the part that actually blocks people
+
+A passkey login is not the same as the wallet disappearing. Someone in São Paulo holding
+BRZ and no ETH cannot sign anything on Base — they have to go acquire a second asset
+nobody told them about first. That, not seed phrases, is the real onboarding wall.
+
+Set `PAYMASTER_URL` to a CDP Paymaster endpoint and it goes away: gas is sponsored, the
+order preview says **Network fee: Free**, and the user never touches ETH. CDP includes
+free monthly Base gas credits, so a demo costs nothing.
+
+The paymaster URL is a spending authority — anyone holding it can bill your budget — so
+it is server-only and never reaches the browser. The client talks to
+[`/api/paymaster`](web/app/api/paymaster/route.ts), which forwards to the real service
+only after [`lib/paymaster.ts`](web/lib/paymaster.ts) decodes the user operation's
+`execute` / `executeBatch` calldata and confirms **every** contract it touches is the
+vault, the aggregator router, or a listed token. Undecodable calldata is refused rather
+than waved through. `scripts/verify-paymaster.mjs` exercises all six cases.
+
+Sponsorship needs the wallet to support it too, so it is offered only to smart wallets —
+another reason that path is the one to recommend.
+
 ### Why Brazil leads, and what happened to naira
 
 The original pitch led with *"pay in naira."* **cNGN is live on Base but has no DEX

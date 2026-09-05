@@ -1,6 +1,7 @@
 'use client'
 
 import { useCurrency } from './currency-context'
+import { useSponsorship } from '@/lib/use-executor'
 import { formatLocal, formatShares } from '@/lib/assets'
 import type { Allocation } from '@/lib/allocator'
 import type { PurchasePlan } from '@/lib/quote'
@@ -18,6 +19,7 @@ type PlanResponse = {
  */
 export function AllocationPreview({ allocation, planned }: { allocation: Allocation; planned: PlanResponse }) {
   const { code, usdToLocal } = useCurrency()
+  const sponsorship = useSponsorship()
   const { plan, reference } = planned
 
   const premium = reference.premiumPct
@@ -86,7 +88,19 @@ export function AllocationPreview({ allocation, planned }: { allocation: Allocat
           value={`${premium > 0 ? '+' : ''}${premium.toFixed(2)}% ${premiumLabel}`}
           tone={Math.abs(premium) > 2 ? 'warn' : 'normal'}
         />
-        <Row label="Network fee" value={`≈ ${formatLocal(usdToLocal(plan.totalGasUsd), code, { compact: true })}`} />
+        {sponsorship.available ? (
+          <Row
+            label="Network fee"
+            value="Free"
+            hint="we cover the gas, so you never need ETH"
+          />
+        ) : (
+          <Row
+            label="Network fee"
+            value={`≈ ${formatLocal(usdToLocal(plan.totalGasUsd), code, { compact: true })}`}
+            hint={sponsorship.appHasPaymaster ? 'paid in ETH from your wallet' : undefined}
+          />
+        )}
         <Row
           label="Worst case"
           value={`${plan.legs.map((l) => formatShares(l.minShares)).join(' / ')} shares`}

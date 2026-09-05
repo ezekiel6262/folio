@@ -203,5 +203,8 @@
       "tradeable": true,
       "locale": "en-US"
     }
-  ]
+  ],
+  "routers": {
+    "kyberswapAggregator": "0x6131B5fae19EA4f9D964eAc0408E4408b66337b5"
+  }
 }
