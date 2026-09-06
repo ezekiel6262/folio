@@ -1,5 +1,9 @@
 # Folio
 
+[![CI](https://github.com/ezekiel6262/folio/actions/workflows/ci.yml/badge.svg)](https://github.com/ezekiel6262/folio/actions/workflows/ci.yml)
+[![Vault on Basescan](https://img.shields.io/badge/vault-0x907a187c-0052FF)](https://basescan.org/address/0x907a187c1c6f7478141daa6094c02a9f5142f654)
+[![License: MIT](https://img.shields.io/badge/license-MIT-black)](LICENSE)
+
 **Pay in reais. Describe the portfolio. Keep it, lock it, or send it.**
 
 Folio is a consumer brokerage whose unit of value is a *named, personal, giftable basket*
@@ -22,7 +26,7 @@ mainnet, not copied from documentation. `scripts/verify-onchain.mjs` re-checks i
 | Execution | KyberSwap aggregator, keyless. Real calldata, one router for all legs |
 | Corridors | **BRZ** (0.10% impact, the default), **IDRX**, **EURC**, **USDC** |
 | Wallets | Coinbase Smart Wallet (passkey, one tap), any injected wallet, WalletConnect |
-| Vault | `FolioVault.sol` — 14 passing tests |
+| Vault | Live at [`0x907a187c…f654`](https://basescan.org/address/0x907a187c1c6f7478141daa6094c02a9f5142f654) on Base mainnet — 14 passing tests |
 
 ### Wallets, and why the button says different things
 
