@@ -1,0 +1,36 @@
+# The README claims 14 passing vault tests and a clean build. This makes that
+# checkable rather than asserted. No secrets are needed: the paymaster and RPC
+# overrides are all optional at build time.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  contracts:
+    name: Vault tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix contracts || npm install --prefix contracts
+      - run: npx hardhat compile
+        working-directory: contracts
+      - run: npx hardhat test
+        working-directory: contracts
+
+  web:
+    name: Typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix web || npm install --prefix web
+      - run: npm --prefix web run typecheck
+      - run: npm --prefix web run build
