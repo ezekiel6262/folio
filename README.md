@@ -28,6 +28,33 @@ mainnet, not copied from documentation. `scripts/verify-onchain.mjs` re-checks i
 | Wallets | Coinbase Smart Wallet (passkey, one tap), any injected wallet, WalletConnect |
 | Vault | Live at [`0x907a187c…f654`](https://basescan.org/address/0x907a187c1c6f7478141daa6094c02a9f5142f654) on Base mainnet — 14 passing tests |
 
+### The look, and why it is not a dashboard
+
+The front end was rebuilt from a ground-up design brief ([docs/DESIGN-BRIEF.md](docs/DESIGN-BRIEF.md))
+and its round-one output ([docs/design/HANDOFF.md](docs/design/HANDOFF.md)):
+**brutalist editorial, monochromatic, one accent.**
+
+Structure is carried by 1px hairlines and 2px hard rules — cards are borders, never
+tinted fills. No shadows, no border radius, no images and no icon library: the logo, the
+empty-state passbook and every bar and glyph are drawn or set in mono. Archivo for UI,
+Instrument Serif for exactly one word per headline, IBM Plex Mono with tabular numerals
+for every figure, so a changing price never makes the layout twitch.
+
+The competition for this quest is a field of identical dark-mode dashboards. This is
+deliberately not that — it reads like a passbook, because that is what it is.
+
+Two screens carry most of the weight:
+
+**Preview** is an accordion. Eight disclosures — what we understood, per-leg cost and
+share count, live price against a dated reference, the gap, the guaranteed worst case,
+thin-pool warnings, exclusions with their reasons, and cost against fee — open one leg at
+a time, so the summary stays scannable and nothing is hidden.
+
+**Buying** has three real states, because a non-smart wallet cannot batch. One-tap states
+the all-or-nothing promise. Step-by-step names every signature with Done / Signing /
+Waiting. Stopped part-way says plainly that the filled shares are in the wallet and not in
+a folio, and lists exactly how far it got.
+
 ### Wallets, and why the button says different things
 
 Only a smart wallet can batch. With a **Coinbase Smart Wallet** the whole purchase —
