@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Kicker } from './ui'
 
 /**
- * The claim link carries the secret in the URL fragment, which browsers never send to a
- * server. Folio therefore cannot claim a gift on the recipient's behalf, and neither can
- * anyone reading our logs.
+ * The claim secret rides in the URL fragment, which browsers never send to a server.
+ * Folio therefore cannot claim a gift on the recipient's behalf, and neither can anyone
+ * reading our logs — which is exactly why losing the link is unrecoverable, and why this
+ * plate is given real weight rather than being tucked under the fold.
  */
 export function ShareLink({ folioId, secret, name }: { folioId: string; secret: string; name: string }) {
   const [url, setUrl] = useState('')
@@ -15,43 +17,55 @@ export function ShareLink({ folioId, secret, name }: { folioId: string; secret: 
     setUrl(`${window.location.origin}/claim/${folioId}#${secret}`)
   }, [folioId, secret])
 
+  useEffect(() => {
+    if (!copied) return
+    const t = setTimeout(() => setCopied(false), 2000)
+    return () => clearTimeout(t)
+  }, [copied])
+
   async function copy() {
     try {
       await navigator.clipboard.writeText(url)
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
     } catch {
-      // clipboard can be blocked; the input below is selectable as a fallback
+      /* clipboard can be blocked; the field below is selectable as a fallback */
     }
   }
 
   return (
-    <div className="card mb-4 border-accent/25 bg-accent-soft/40 p-5">
-      <p className="label text-accent">Send this link</p>
-      <p className="mt-1.5 text-[14px] leading-relaxed text-ink/70">
-        Whoever opens it claims <span className="font-semibold text-ink">{name}</span>. The link holds
-        the only key, so save it before you leave this page.
+    <div className="border-2 border-accent p-4">
+      <Kicker>Hand this over</Kicker>
+
+      <p className="mt-3 font-serif text-[22px] leading-[1.25] text-ink">
+        This link is the only <span className="italic">key</span>.
       </p>
 
-      <input
-        readOnly
-        value={url}
-        onFocus={(e) => e.currentTarget.select()}
-        className="mt-3 !bg-white font-mono text-[12px]"
-      />
+      <p className="t-body-sm mt-3">
+        Whoever opens it can claim <span className="text-ink">{name}</span>. Send it to one person,
+        and save it before you leave this page — we cannot send it again.
+      </p>
 
-      <div className="mt-2.5 flex gap-2">
-        <button onClick={copy} className="btn-primary flex-1 !py-2.5 text-[13px]">
-          {copied ? 'Copied' : 'Copy link'}
+      <div className="mt-4 bg-ground-inset p-3">
+        <input
+          readOnly
+          value={url}
+          onFocus={(e) => e.currentTarget.select()}
+          className="w-full break-all border-0 bg-transparent p-0 font-mono text-[10.5px] text-body outline-none"
+        />
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <button onClick={copy} className="btn-primary !min-h-[44px] flex-1 !text-[11px]">
+          {copied ? 'Link copied' : 'Copy link'}
         </button>
-        {typeof navigator !== 'undefined' && 'share' in navigator && (
-          <button
-            onClick={() => navigator.share?.({ title: name, url })}
-            className="btn-ghost !py-2.5 text-[13px]"
-          >
-            Share
-          </button>
-        )}
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="btn-secondary !min-h-[44px] flex-1 !text-[11px] no-underline"
+        >
+          Preview it
+        </a>
       </div>
     </div>
   )

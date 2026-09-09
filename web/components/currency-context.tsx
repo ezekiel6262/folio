@@ -20,6 +20,9 @@ type Ctx = {
   prices: Record<string, number>
   multipliers: Record<string, bigint>
   stale: string[]
+  /** Age of the oldest feed backing the shown prices, in hours. */
+  staleHours: number
+  pricesStale: boolean
   loading: boolean
   usdToLocal: (usd: number) => number
   localToUsd: (local: number) => number
@@ -77,6 +80,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       prices,
       multipliers,
       stale: (data?.prices ?? []).filter((p) => p.stale).map((p) => p.symbol),
+      staleHours: Math.round(Math.max(0, ...(data?.prices ?? []).map((p) => p.ageSeconds / 3600), 0)),
+      pricesStale: Math.max(0, ...(data?.prices ?? []).map((p) => p.ageSeconds / 3600), 0) >= 24,
       loading: isLoading,
       usdToLocal: (usd: number) => usd * rate,
       localToUsd: (local: number) => (rate ? local / rate : 0),

@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  @keyframes folio-spin { to { transform: rotate(360deg); } }
+  @keyframes folio-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes folio-sheet { from { transform: translateY(100%); } to { transform: none; } }
+  body { margin: 0; background: #f3efef; }
+  a { color: #1a2fd6; text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: #111111; }
+  input:focus, textarea:focus, button:focus-visible { outline: 1px solid #1a2fd6; outline-offset: 3px; }
+  ::selection { background: #1a2fd6; color: #fcfcfc; }
+  ::placeholder { color: #8a8a8a; }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#f3efef;color:#111111;font-family:'Archivo',sans-serif;padding:24px 16px 56px;display:flex;flex-direction:column;align-items:center;gap:20px">
+
+  <div style="width:100%;max-width:760px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:2px solid #111111;padding-bottom:12px">
+      <span style="display:flex;align-items:center;gap:9px;margin-right:auto">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none" role="img" aria-label="Folio"><rect x="1" y="1" width="18" height="18" stroke="#111111" stroke-width="2"></rect><rect x="9" y="0" width="2" height="20" fill="#1a2fd6"></rect></svg>
+        <span style="font-weight:700;font-size:15px;letter-spacing:0.04em;text-transform:uppercase">Folio<span style="color:#1a2fd6">.</span></span>
+      </span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5a5858">Prototype · 19 screens · <span style="font-style:italic;font-family:'Instrument Serif',serif;font-size:13px;text-transform:none;letter-spacing:0">tap through</span></span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:0;border-left:1px solid #d8d8d8;border-top:1px solid #d8d8d8">
+      <sc-for list="{{ screens }}" as="s" hint-placeholder-count="19">
+        <sc-if value="{{ s.active }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ s.go }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.04em;text-transform:uppercase;padding:8px 11px;border:0;border-right:1px solid #111111;border-bottom:1px solid #111111;background:#111111;color:#fcfcfc;cursor:pointer;display:flex;gap:7px;align-items:baseline"><span style="color:#8f9dff">{{ s.n }}</span>{{ s.label }}</button>
+        </sc-if>
+        <sc-if value="{{ s.idle }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ s.go }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.04em;text-transform:uppercase;padding:8px 11px;border:0;border-right:1px solid #d8d8d8;border-bottom:1px solid #d8d8d8;background:transparent;color:#5a5858;cursor:pointer;display:flex;gap:7px;align-items:baseline" style-hover="background:#fcfcfc;color:#111111"><span style="color:#8a8a8a">{{ s.n }}</span>{{ s.label }}</button>
+        </sc-if>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="width:390px;flex:none;height:812px;background:#fcfcfc;border:2px solid #111111;overflow:hidden;display:flex;flex-direction:column;position:relative">
+
+    <div style="flex:none;height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.06em;color:#5a5858;border-bottom:1px solid #d8d8d8;font-feature-settings:'tnum'">
+      <span>09:41</span>
+      <span>BASE · {{ curCode }}</span>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow-y:auto;position:relative">
+
+      <!-- 01 Eligibility gate -->
+      <sc-if value="{{ isGate }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:36px 24px 28px;display:flex;flex-direction:column;min-height:100%;animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#1a2fd6;margin-bottom:14px">01 · Before we begin</div>
+          <h1 style="font-weight:700;font-size:33px;line-height:1.02;letter-spacing:-0.035em;text-transform:uppercase;margin:0 0 18px">Who may hold<br>these <span style="font-family:'Instrument Serif',serif;font-weight:400;font-style:italic;text-transform:none;letter-spacing:-0.01em;font-size:38px">shares</span><span style="color:#1a2fd6">.</span></h1>
+          <p style="font-size:14px;line-height:1.6;color:#333333;margin:0 0 14px">The tokenized shares Folio buys are issued for people outside the United States. That is a restriction on the asset itself, set by its issuer — not a judgement about you.</p>
+          <p style="font-size:14px;line-height:1.6;color:#333333;margin:0 0 26px">Confirm below and we will not ask again on this device.</p>
+
+          <div onClick="{{ toggleAttest }}" style="display:flex;gap:14px;align-items:flex-start;padding:16px 0;min-height:44px;cursor:pointer;border-top:1px solid #111111;border-bottom:1px solid #111111">
+            <span style="flex:none;width:20px;height:20px;margin-top:1px;border:1px solid #111111;display:grid;place-items:center;background:#ffffff">
+              <sc-if value="{{ attested }}" hint-placeholder-val="{{ false }}">
+                <span style="width:10px;height:10px;background:#1a2fd6;display:block"></span>
+              </sc-if>
+            </span>
+            <span style="font-size:13.5px;line-height:1.5;color:#111111">I am not a US person and I am not accessing Folio from the United States.</span>
+          </div>
+
+          <div style="margin-top:auto;padding-top:26px;display:flex;flex-direction:column;gap:12px">
+            <button onClick="{{ continueGate }}" disabled="{{ notAttested }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="background:#1a2fd6;border-color:#1a2fd6">Continue</button>
+            <button onClick="{{ goBlocked }}" style="align-self:center;background:transparent;border:0;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.04em;color:#5a5858;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px" style-hover="color:#1a2fd6">See the blocked state</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 02 Blocked -->
+      <sc-if value="{{ isBlocked }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:40px 24px 28px;display:flex;flex-direction:column;min-height:100%;background:#080808;color:#fcfcfc;position:relative;animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div aria-hidden="true" style="position:absolute;right:8px;bottom:-24px;font-family:'Instrument Serif',serif;font-style:italic;font-size:210px;line-height:1;color:#171617;user-select:none">us</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#8f9dff;margin-bottom:14px;position:relative">Not available here</div>
+          <h1 style="font-weight:700;font-size:30px;line-height:1.04;letter-spacing:-0.035em;text-transform:uppercase;margin:0 0 20px;position:relative">Folio cannot open<br>an account for a<br>US address<span style="color:#8f9dff">.</span></h1>
+          <p style="font-size:14px;line-height:1.65;color:#d4d2d2;margin:0 0 14px;position:relative">The shares Folio holds are issued only for non-US persons. We read your region as the United States, so we cannot take you further. Nothing has been charged and no account exists.</p>
+          <p style="font-size:13px;line-height:1.65;color:#8a8a8a;margin:0;position:relative">If that is wrong — travelling, a VPN, a mis-read network — try again from your usual connection.</p>
+          <div style="margin-top:auto;padding-top:28px;position:relative">
+            <button onClick="{{ goGate }}" style="width:100%;min-height:52px;background:transparent;color:#fcfcfc;border:1px solid #fcfcfc;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;font-family:'Archivo',sans-serif" style-hover="border-color:#1a2fd6;color:#1a2fd6">Try again</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 03 Door -->
+      <sc-if value="{{ isDoor }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #111111">
+            <span style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style="flex:none" role="img" aria-label="Folio"><rect x="1" y="1" width="18" height="18" stroke="#111111" stroke-width="2"></rect><rect x="9" y="0" width="2" height="20" fill="#1a2fd6"></rect></svg>
+              <span style="font-weight:700;font-size:15px;letter-spacing:0.04em;text-transform:uppercase">Folio<span style="color:#1a2fd6">.</span></span>
+            </span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;border:1px solid #111111;padding:4px 8px">{{ curCode }}</span>
+          </div>
+
+          <div style="padding:32px 20px 26px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#1a2fd6;margin-bottom:14px">US shares · your currency</div>
+            <h1 style="font-weight:700;font-size:40px;line-height:0.98;letter-spacing:-0.04em;text-transform:uppercase;margin:0 0 18px">Own Apple.<br>Pay in <span style="font-family:'Instrument Serif',serif;font-weight:400;font-style:italic;text-transform:none;letter-spacing:-0.01em;font-size:44px">{{ curMoneyWord }}</span><span style="color:#1a2fd6">.</span></h1>
+            <p style="font-size:14.5px;line-height:1.6;color:#333333;margin:0 0 22px;max-width:32ch">Describe a portfolio in a sentence. Keep it, lock it until a date, or hand it to someone you love.</p>
+            <button onClick="{{ goWallet }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;font-family:'Archivo',sans-serif" style-hover="background:#1a2fd6;border-color:#1a2fd6">Sign in</button>
+          </div>
+
+          <div style="border-top:1px solid #111111;border-bottom:1px solid #111111;padding:16px 20px;background:#f3efef">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#5a5858">Reference prices</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.06em;color:#1a2fd6;border:1px solid #1a2fd6;padding:3px 7px">{{ staleLabel }}</span>
+            </div>
+            <sc-for list="{{ tickerRows }}" as="row" hint-placeholder-count="4">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;border-top:1px solid #b5b2b2">
+                <span style="font-size:13.5px">{{ row.name }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14px;font-feature-settings:'tnum'">{{ row.price }}</span>
+              </div>
+            </sc-for>
+            <div style="font-size:11.5px;color:#5a5858;margin-top:10px;line-height:1.5">Per share, from the Chainlink reference feed. {{ staleSentence }}</div>
+          </div>
+
+          <div style="padding:26px 20px 34px">
+            <h4 style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;margin:0 0 14px">How it works</h4>
+            <sc-for list="{{ howRows }}" as="h" hint-placeholder-count="3">
+              <div style="display:flex;gap:14px;padding:14px 0;border-top:1px solid #d8d8d8">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#1a2fd6;flex:none;font-feature-settings:'tnum'">{{ h.n }}</span>
+                <span style="font-size:13.5px;line-height:1.55;color:#333333">{{ h.text }}</span>
+              </div>
+            </sc-for>
+            <p style="font-size:11px;line-height:1.6;color:#8a8a8a;margin:18px 0 0;border-top:1px solid #d8d8d8;padding-top:14px">Folio is an interface and a vault. It is not a broker, does not issue shares, and promises no return. Shares carry no voting or redemption rights here.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 04 Wallet picker -->
+      <sc-if value="{{ isWallet }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(8,8,8,0.62)">
+          <div style="background:#fcfcfc;border-top:2px solid #111111;padding:20px 20px 26px;animation:folio-sheet 280ms cubic-bezier(0.2,0.8,0.2,1) both">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <h4 style="font-weight:700;font-size:14px;letter-spacing:0.16em;text-transform:uppercase;margin:0">Sign in</h4>
+              <button onClick="{{ goDoor }}" style="background:transparent;border:0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5858;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px" style-hover="color:#1a2fd6">Cancel</button>
+            </div>
+            <p style="font-size:13px;line-height:1.55;color:#5a5858;margin:0 0 18px">Your folios are held in your name, whichever you choose.</p>
+
+            <button onClick="{{ goHome }}" style="width:100%;text-align:left;background:#f3efef;border:1px solid #1a2fd6;padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:9px;font:inherit;color:#111111" style-hover="background:#fcfcfc">
+              <span style="display:flex;align-items:center;gap:10px;width:100%">
+                <span style="font-weight:700;font-size:14px;letter-spacing:0.06em;text-transform:uppercase;flex:1">Coinbase Smart Wallet</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#fcfcfc;background:#1a2fd6;padding:3px 7px;flex:none">Best</span>
+              </span>
+              <span style="font-size:13px;line-height:1.5;color:#333333">Your face or fingerprint — no seed phrase. Buys in one confirmation, and {{ feeSentence }}</span>
+            </button>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin:22px 0 2px">Wallets on this device</div>
+            <sc-for list="{{ wallets }}" as="w" hint-placeholder-count="2">
+              <button onClick="{{ w.pick }}" style="width:100%;text-align:left;background:transparent;border:0;border-top:1px solid #d8d8d8;padding:14px 0;min-height:56px;cursor:pointer;display:flex;align-items:center;gap:12px;font:inherit;color:#111111;transition:padding-left 260ms cubic-bezier(0.2,0.8,0.2,1)" style-hover="padding-left:12px;background:#f3efef">
+                <span style="flex:none;width:26px;height:26px;border:1px solid #111111;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ w.initial }}</span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ w.name }}</span>
+                  <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;margin-top:2px">{{ w.note }}</span>
+                </span>
+                <span style="flex:none;color:#1a2fd6;font-size:15px">&#8599;</span>
+              </button>
+            </sc-for>
+            <p style="font-size:11px;line-height:1.6;color:#8a8a8a;margin:16px 0 0;border-top:1px solid #d8d8d8;padding-top:14px">Every wallet works. The others sign each step of a purchase separately and cannot have the fee covered.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 05 Home -->
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #111111">
+            <span style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style="flex:none" role="img" aria-label="Folio"><rect x="1" y="1" width="18" height="18" stroke="#111111" stroke-width="2"></rect><rect x="9" y="0" width="2" height="20" fill="#1a2fd6"></rect></svg>
+              <span style="font-weight:700;font-size:15px;letter-spacing:0.04em;text-transform:uppercase">Folio<span style="color:#1a2fd6">.</span></span>
+            </span>
+            <span style="display:flex;gap:8px;align-items:center">
+              <button onClick="{{ toggleEmpty }}" style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#5a5858;background:transparent;border:1px solid #d8d8d8;padding:4px 8px;cursor:pointer" style-hover="border-color:#111111;color:#111111">{{ emptyToggleLabel }}</button>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;border:1px solid #111111;padding:4px 8px">{{ curCode }}</span>
+            </span>
+          </div>
+
+          <div style="padding:28px 20px 22px;border-bottom:1px solid #111111">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#8a8a8a;margin-bottom:10px">Ready to invest</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:44px;line-height:1;letter-spacing:-0.03em;font-feature-settings:'tnum'">{{ balanceLocal }}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5a5858;margin-top:10px;font-feature-settings:'tnum'">{{ balanceSecondary }}</div>
+            <sc-if value="{{ curSettlesElsewhere }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:14px;padding:12px 13px;border-left:2px solid #1a2fd6;background:#f3efef">
+                <span style="font-size:12px;line-height:1.55;color:#333333">{{ settleNote }}</span>
+              </div>
+            </sc-if>
+            <button onClick="{{ goCompose }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;margin-top:18px;font-family:'Archivo',sans-serif" style-hover="background:#1a2fd6;border-color:#1a2fd6">Build a folio</button>
+          </div>
+
+          <sc-if value="{{ hasFolios }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:22px 20px 34px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                <h4 style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;margin:0">Your folios</h4>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;font-feature-settings:'tnum'">02</span>
+              </div>
+
+              <button onClick="{{ goDetail }}" style="width:100%;text-align:left;font:inherit;color:#111111;background:transparent;border:0;border-top:1px solid #111111;padding:16px 0;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:padding-left 260ms cubic-bezier(0.2,0.8,0.2,1)" style-hover="padding-left:12px;background:#f3efef">
+                <span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;width:100%">
+                  <span style="font-weight:700;font-size:14px;letter-spacing:0.06em;text-transform:uppercase">Ada school</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:17px;font-feature-settings:'tnum'">{{ folioAValue }}</span>
+                </span>
+                <span style="font-size:13px;color:#5a5858">Apple, NVIDIA, Microsoft, Alphabet</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#1a2fd6;border:1px solid #1a2fd6;padding:3px 7px;align-self:flex-start">Locked until 12 Mar 2028</span>
+              </button>
+
+              <button onClick="{{ goDetail }}" style="width:100%;text-align:left;font:inherit;color:#111111;background:transparent;border:0;border-top:1px solid #d8d8d8;border-bottom:1px solid #111111;padding:16px 0;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:padding-left 260ms cubic-bezier(0.2,0.8,0.2,1)" style-hover="padding-left:12px;background:#f3efef">
+                <span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;width:100%">
+                  <span style="font-weight:700;font-size:14px;letter-spacing:0.06em;text-transform:uppercase">My first Apple</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:17px;font-feature-settings:'tnum'">{{ folioBValue }}</span>
+                </span>
+                <span style="font-size:13px;color:#5a5858">Apple only · 0.0586 shares</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#5a5858;border:1px solid #d8d8d8;padding:3px 7px;align-self:flex-start">Yours, no lock</span>
+              </button>
+              <p style="font-size:11px;line-height:1.6;color:#8a8a8a;margin:16px 0 0">Values move with the reference feed. {{ staleSentence }}</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ noFolios }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:34px 24px 40px;display:flex;flex-direction:column;align-items:flex-start">
+              <div style="width:104px;height:130px;border:1px solid #111111;position:relative;background:#f3efef;margin-bottom:24px">
+                <div style="position:absolute;left:0;top:0;bottom:0;width:6px;background:#1a2fd6"></div>
+                <div style="position:absolute;left:18px;right:14px;top:24px;height:1px;background:#b5b2b2"></div>
+                <div style="position:absolute;left:18px;right:38px;top:40px;height:1px;background:#b5b2b2"></div>
+                <div style="position:absolute;left:18px;right:14px;top:56px;height:1px;background:#b5b2b2"></div>
+                <div style="position:absolute;left:18px;right:52px;top:72px;height:1px;background:#b5b2b2"></div>
+              </div>
+              <h4 style="font-weight:700;font-size:24px;line-height:1.05;letter-spacing:-0.03em;text-transform:uppercase;margin:0 0 12px">Nothing here<br>yet<span style="color:#1a2fd6">.</span></h4>
+              <p style="font-size:14px;line-height:1.6;color:#333333;margin:0 0 8px;max-width:32ch">A folio is a named basket of real US companies, held in your name. Most people start with one sentence and about {{ startAmount }}.</p>
+              <p style="font-size:12px;color:#8a8a8a;margin:0">You can add to it, lock it, or give it away later.</p>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- 06 Compose -->
+      <sc-if value="{{ isCompose }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #111111">
+            <button onClick="{{ goHome }}" style="background:transparent;border:0;padding:6px;margin:-6px;cursor:pointer;min-width:32px;min-height:32px;color:#111111;font-size:15px;font-family:'IBM Plex Mono',monospace" style-hover="color:#1a2fd6">&#8592;</button>
+            <span style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;flex:1">New folio</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#1a2fd6">01 / 03 Describe</span>
+          </div>
+
+          <div style="padding:26px 20px 34px">
+            <h2 style="font-weight:700;font-size:27px;line-height:1.02;letter-spacing:-0.035em;text-transform:uppercase;margin:0 0 10px">What should<br>it hold<span style="color:#1a2fd6">?</span></h2>
+            <p style="font-size:13px;line-height:1.6;color:#5a5858;margin:0 0 16px">Plain words. We read it and show you the basket before anything is bought.</p>
+
+            <textarea value="{{ prompt }}" onChange="{{ onPrompt }}" rows="3" placeholder="US tech that builds chips, no ads, for university" style="width:100%;box-sizing:border-box;font-family:'Archivo',sans-serif;font-size:14.5px;line-height:1.55;min-height:96px;padding:12px;background:#ffffff;border:1px solid #111111;color:#111111;resize:vertical"></textarea>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin:20px 0 9px">Or start from one of these</div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ examples }}" as="ex" hint-placeholder-count="4">
+                <button onClick="{{ ex.use }}" style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:8px 11px;min-height:36px;border:1px solid #d8d8d8;background:transparent;color:#333333;cursor:pointer;text-align:left" style-hover="border-color:#1a2fd6;color:#111111">{{ ex.label }}</button>
+              </sc-for>
+            </div>
+
+            <div style="height:1px;background:#111111;margin:26px 0"></div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <h4 style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;margin:0">How much</h4>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a">Min {{ minAmount }}</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:8px;border-bottom:2px solid #111111;padding-bottom:8px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:22px;color:#8a8a8a">{{ curSymbol }}</span>
+              <input value="{{ amountText }}" onChange="{{ onAmount }}" inputMode="decimal" style="flex:1;min-width:0;border:0;padding:0;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:38px;letter-spacing:-0.03em;font-feature-settings:'tnum';min-height:48px;background:transparent;color:#111111">
+            </div>
+            <div style="display:flex;gap:0;margin-top:12px;border-left:1px solid #d8d8d8">
+              <sc-for list="{{ presets }}" as="p" hint-placeholder-count="4">
+                <button onClick="{{ p.use }}" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:12px;font-feature-settings:'tnum';min-height:42px;border:0;border-right:1px solid #d8d8d8;border-top:1px solid #d8d8d8;border-bottom:1px solid #d8d8d8;background:transparent;color:#111111;cursor:pointer" style-hover="background:#111111;color:#fcfcfc">{{ p.label }}</button>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ amountTooLow }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:16px;padding:12px 13px;border:1px solid #1a2fd6;background:#ffffff">
+                <span style="font-size:12px;line-height:1.55;color:#333333"><span style="color:#1a2fd6">&#9679;</span> {{ tooLowMessage }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ amountOverBalance }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:16px;padding:12px 13px;border:1px solid #1a2fd6;background:#ffffff">
+                <span style="font-size:12px;line-height:1.55;color:#333333"><span style="color:#1a2fd6">&#9679;</span> {{ shortfallMessage }}</span>
+              </div>
+            </sc-if>
+
+            <button onClick="{{ goPreview }}" disabled="{{ composeBlocked }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;margin-top:22px" style-hover="background:#1a2fd6;border-color:#1a2fd6">See what this buys</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 07 Preview -->
+      <sc-if value="{{ isPreview }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #111111">
+            <button onClick="{{ goCompose }}" style="background:transparent;border:0;padding:6px;margin:-6px;cursor:pointer;min-width:32px;min-height:32px;color:#111111;font-size:15px;font-family:'IBM Plex Mono',monospace" style-hover="color:#1a2fd6">&#8592;</button>
+            <span style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;flex:1">Your basket</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#1a2fd6">02 / 03 Check</span>
+          </div>
+
+          <sc-if value="{{ pricesStale }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:12px 20px;background:#080808;color:#fcfcfc">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.55"><span style="color:#8f9dff">Reference prices are {{ staleHoursLabel }} old.</span> The US market has been closed. What you pay is set by the live market below, not by these.</span>
+            </div>
+          </sc-if>
+
+          <div style="padding:24px 20px 18px;border-bottom:1px solid #111111">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#8a8a8a;margin-bottom:12px">What we understood</div>
+            <p style="font-family:'Instrument Serif',serif;font-size:25px;line-height:1.24;margin:0 0 16px">Built around chips: <em style="font-style:italic">NVIDIA</em> and <em style="font-style:italic">SanDisk</em>. Left out Alphabet and Meta.</p>
+            <div style="display:flex;align-items:baseline;gap:10px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a">You spend</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:26px;letter-spacing:-0.02em;font-feature-settings:'tnum'">{{ amountLocal }}</span>
+            </div>
+          </div>
+
+          <div style="padding:0 20px">
+            <sc-for list="{{ legs }}" as="leg" hint-placeholder-count="2">
+              <div style="border-bottom:1px solid #d8d8d8">
+                <button onClick="{{ leg.toggle }}" style="width:100%;text-align:left;font:inherit;color:#111111;background:transparent;border:0;padding:16px 0;cursor:pointer;display:flex;flex-direction:column;gap:8px">
+                  <span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;width:100%">
+                    <span style="display:flex;align-items:baseline;gap:8px;min-width:0">
+                      <span style="font-weight:700;font-size:14px;letter-spacing:0.06em;text-transform:uppercase">{{ leg.name }}</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;font-feature-settings:'tnum'">{{ leg.weight }}</span>
+                    </span>
+                    <span style="text-align:right;flex:none;font-family:'IBM Plex Mono',monospace;font-feature-settings:'tnum'">
+                      <span style="display:block;font-weight:500;font-size:16px">{{ leg.cost }}</span>
+                      <span style="display:block;font-size:10.5px;color:#5a5858;margin-top:2px">{{ leg.shares }} sh</span>
+                    </span>
+                  </span>
+                  <span style="display:flex;align-items:center;gap:8px;width:100%">
+                    <span style="flex:1;min-width:0;font-size:12.5px;line-height:1.5;color:#5a5858">{{ leg.why }}</span>
+                    <sc-if value="{{ leg.closed }}" hint-placeholder-val="{{ true }}">
+                      <span style="flex:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#1a2fd6;border:1px solid #1a2fd6;padding:2px 7px">More +</span>
+                    </sc-if>
+                    <sc-if value="{{ leg.open }}" hint-placeholder-val="{{ false }}">
+                      <span style="flex:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#fcfcfc;background:#1a2fd6;padding:2px 7px">Close &#8212;</span>
+                    </sc-if>
+                  </span>
+                </button>
+
+                <sc-if value="{{ leg.open }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:0 0 18px 14px;border-left:2px solid #1a2fd6;display:flex;flex-direction:column;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-feature-settings:'tnum'">
+                    <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#8a8a8a">Live market price</span><span>{{ leg.fill }}</span></div>
+                    <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#8a8a8a">Reference ({{ staleHoursLabel }} old)</span><span>{{ leg.ref }}</span></div>
+                    <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#8a8a8a">You are paying</span><span style="color:#1a2fd6">{{ leg.gap }}</span></div>
+                    <div style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid #d8d8d8;padding-top:10px"><span style="color:#8a8a8a">Guaranteed, worst case</span><span>{{ leg.worst }} sh</span></div>
+                    <sc-if value="{{ leg.thin }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding:10px 11px;border:1px solid #1a2fd6;font-family:'Archivo',sans-serif;font-size:11.5px;line-height:1.55;color:#333333"><span style="color:#1a2fd6">&#9679;</span> {{ leg.thinNote }}</div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="padding:18px 20px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin-bottom:2px">Left out, on purpose</div>
+            <sc-for list="{{ excluded }}" as="ex" hint-placeholder-count="2">
+              <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #d8d8d8;font-size:12.5px;color:#5a5858">
+                <span>{{ ex.name }}</span>
+                <span style="text-align:right">{{ ex.why }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="margin:0 20px;display:grid;grid-template-columns:1fr 1fr;border:1px solid #111111">
+            <div style="padding:14px;border-right:1px solid #111111">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#8a8a8a;margin-bottom:8px">Cost to get in</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:22px;font-feature-settings:'tnum'">1.82%</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#5a5858;margin-top:5px;font-feature-settings:'tnum'">{{ costLocal }} of {{ amountLocal }}</div>
+            </div>
+            <div style="padding:14px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#8a8a8a;margin-bottom:8px">Network fee</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:22px;font-feature-settings:'tnum'">{{ feeValue }}</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#5a5858;margin-top:5px">{{ feeNote }}</div>
+            </div>
+          </div>
+
+          <div style="padding:18px 20px 34px">
+            <sc-if value="{{ curSettlesElsewhere }}" hint-placeholder-val="{{ false }}">
+              <p style="font-size:12px;line-height:1.6;color:#333333;margin:0 0 14px;border-left:2px solid #1a2fd6;padding-left:12px">{{ settleNote }}</p>
+            </sc-if>
+            <p style="font-size:11px;line-height:1.6;color:#8a8a8a;margin:0 0 18px">Share counts are equivalents, adjusted for dividends and splits, so a corporate action never quietly changes what you hold.</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <button onClick="{{ goCommit }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="background:#1a2fd6;border-color:#1a2fd6">This looks right</button>
+              <button onClick="{{ goCompose }}" style="width:100%;min-height:46px;background:transparent;color:#111111;border:1px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="border-color:#1a2fd6;color:#1a2fd6">Change the wording</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 08 Commit -->
+      <sc-if value="{{ isCommit }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #111111">
+            <button onClick="{{ goPreview }}" style="background:transparent;border:0;padding:6px;margin:-6px;cursor:pointer;min-width:32px;min-height:32px;color:#111111;font-size:15px;font-family:'IBM Plex Mono',monospace" style-hover="color:#1a2fd6">&#8592;</button>
+            <span style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;flex:1">Name it</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#1a2fd6">03 / 03 Finish</span>
+          </div>
+
+          <div style="padding:26px 20px 34px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#8a8a8a;margin-bottom:10px">What is it called</div>
+            <input value="{{ folioName }}" onChange="{{ onFolioName }}" maxLength="40" placeholder="Ada school" style="width:100%;box-sizing:border-box;font-family:'Archivo',sans-serif;font-weight:700;font-size:24px;letter-spacing:-0.02em;text-transform:uppercase;border:0;border-bottom:2px solid #111111;padding:0 0 10px;min-height:46px;background:transparent;color:#111111">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;margin-top:9px;font-feature-settings:'tnum'">A person, a year, a plan. {{ nameCount }}/40</div>
+
+            <div style="height:1px;background:#d8d8d8;margin:26px 0"></div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#8a8a8a;margin-bottom:10px">Who is it for</div>
+            <button onClick="{{ setKeep }}" style="width:100%;text-align:left;font:inherit;color:#111111;background:transparent;border:0;border-top:1px solid #111111;padding:15px 0;min-height:56px;cursor:pointer;display:flex;gap:12px;align-items:flex-start">
+              <span style="flex:none;width:16px;height:16px;margin-top:2px;border:1px solid #111111;display:grid;place-items:center">
+                <sc-if value="{{ isKeep }}" hint-placeholder-val="{{ true }}">
+                  <span style="width:8px;height:8px;background:#1a2fd6;display:block"></span>
+                </sc-if>
+              </span>
+              <span>
+                <span style="display:block;font-weight:700;font-size:13px;letter-spacing:0.08em;text-transform:uppercase">Keep it</span>
+                <span style="display:block;font-size:12.5px;line-height:1.5;color:#5a5858;margin-top:4px">Held in your name. Add to it or take the shares out whenever you want.</span>
+              </span>
+            </button>
+            <button onClick="{{ setSend }}" style="width:100%;text-align:left;font:inherit;color:#111111;background:transparent;border:0;border-top:1px solid #d8d8d8;border-bottom:1px solid #111111;padding:15px 0;min-height:56px;cursor:pointer;display:flex;gap:12px;align-items:flex-start">
+              <span style="flex:none;width:16px;height:16px;margin-top:2px;border:1px solid #111111;display:grid;place-items:center">
+                <sc-if value="{{ isSend }}" hint-placeholder-val="{{ false }}">
+                  <span style="width:8px;height:8px;background:#1a2fd6;display:block"></span>
+                </sc-if>
+              </span>
+              <span>
+                <span style="display:block;font-weight:700;font-size:13px;letter-spacing:0.08em;text-transform:uppercase">Send it to someone</span>
+                <span style="display:block;font-size:12.5px;line-height:1.5;color:#5a5858;margin-top:4px">You get one link to hand over. They do not need a wallet to see it.</span>
+              </span>
+            </button>
+
+            <sc-if value="{{ isSend }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:20px;padding:16px;border:1px solid #1a2fd6;background:#f3efef">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#1a2fd6;margin-bottom:10px">Unlock date — optional</div>
+                <input value="{{ unlockDate }}" onChange="{{ onUnlock }}" type="date" style="width:100%;box-sizing:border-box;background:#ffffff;border:1px solid #111111;min-height:44px;padding:0 12px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#111111;font-feature-settings:'tnum'">
+                <p style="font-size:12px;line-height:1.55;color:#333333;margin:10px 0 0">It is theirs from the moment you send it. They can see it the whole time and take the shares out {{ unlockPhrase }}.</p>
+              </div>
+            </sc-if>
+
+            <div style="height:1px;background:#111111;margin:26px 0 0"></div>
+            <sc-for list="{{ commitRows }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #d8d8d8;font-family:'IBM Plex Mono',monospace;font-size:12px;font-feature-settings:'tnum'">
+                <span style="color:#8a8a8a;letter-spacing:0.06em;text-transform:uppercase;font-size:10.5px;align-self:center">{{ r.label }}</span>
+                <span style="text-align:right">{{ r.value }}</span>
+              </div>
+            </sc-for>
+
+            <button onClick="{{ startOneTap }}" style="width:100%;min-height:54px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;margin-top:22px" style-hover="background:#1a2fd6;border-color:#1a2fd6">{{ buyLabel }}</button>
+            <div style="display:flex;justify-content:center;margin-top:12px">
+              <button onClick="{{ startSteps }}" style="background:transparent;border:0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5858;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px" style-hover="color:#1a2fd6">Simulate a browser wallet instead</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 09 Buying -->
+      <sc-if value="{{ isBuying }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:32px 20px 28px;min-height:100%;display:flex;flex-direction:column;animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+
+          <sc-if value="{{ isOneTap }}" hint-placeholder-val="{{ false }}">
+            <div style="margin:auto 0;display:flex;flex-direction:column;align-items:flex-start">
+              <span style="width:34px;height:34px;border:1px solid #d8d8d8;border-top-color:#1a2fd6;border-radius:50%;display:block;animation:folio-spin 900ms linear infinite;margin-bottom:26px"></span>
+              <h2 style="font-weight:700;font-size:27px;line-height:1.02;letter-spacing:-0.035em;text-transform:uppercase;margin:0 0 12px">Buying your<br>folio<span style="color:#1a2fd6">.</span></h2>
+              <p style="font-size:13.5px;line-height:1.6;color:#333333;margin:0;max-width:30ch">One confirmation, then it is done. Nothing is charged unless the whole basket goes through.</p>
+              <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8a8a8a;margin:16px 0 0;font-feature-settings:'tnum'">{{ amountLocal }} · {{ folioNameOrDefault }}</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isStepping }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#1a2fd6;margin-bottom:14px">Step {{ stepNumber }} of 06</div>
+              <h2 style="font-weight:700;font-size:26px;line-height:1.04;letter-spacing:-0.035em;text-transform:uppercase;margin:0 0 10px">{{ stepHeadline }}</h2>
+              <p style="font-size:13px;line-height:1.6;color:#5a5858;margin:0 0 22px">Your wallet signs each part separately. Keep this screen open — we will tell you where we are.</p>
+              <sc-for list="{{ steps }}" as="st" hint-placeholder-count="6">
+                <div style="display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid #d8d8d8">
+                  <span style="flex:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:{{ st.numColor }};font-feature-settings:'tnum';width:18px">{{ st.n }}</span>
+                  <span style="flex:1;min-width:0">
+                    <span style="display:block;font-size:13.5px;color:{{ st.textColor }}">{{ st.label }}</span>
+                    <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;margin-top:3px">{{ st.note }}</span>
+                  </span>
+                  <span style="flex:none;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:{{ st.numColor }}">{{ st.state }}</span>
+                </div>
+              </sc-for>
+              <p style="font-size:11px;line-height:1.6;color:#8a8a8a;margin:16px 0 0;border-top:1px solid #111111;padding-top:14px">A Coinbase Smart Wallet would do all six in one tap{{ feeTail }}</p>
+              <div style="display:flex;justify-content:center;margin-top:12px">
+                <button onClick="{{ breakRun }}" style="background:transparent;border:0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5858;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px" style-hover="color:#1a2fd6">Simulate a stop at step 04</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isStopped }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#1a2fd6;margin-bottom:14px">Stopped part way</div>
+              <h2 style="font-weight:700;font-size:26px;line-height:1.04;letter-spacing:-0.035em;text-transform:uppercase;margin:0 0 16px">Three of the six<br>steps went<br>through<span style="color:#1a2fd6">.</span></h2>
+              <p style="font-size:13.5px;line-height:1.6;color:#333333;margin:0 0 16px">Your wallet stopped at step 04, so the basket was not finished. This matters: the part that did go through is real, and those shares are sitting in your wallet now — not in a folio.</p>
+
+              <div style="border:1px solid #111111;padding:14px;margin-bottom:16px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#1a2fd6;margin-bottom:10px">In your wallet right now</div>
+                <div style="display:flex;justify-content:space-between;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding-bottom:8px;font-feature-settings:'tnum'"><span>NVIDIA</span><span>{{ nvidiaShares }} sh</span></div>
+                <div style="display:flex;justify-content:space-between;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;border-top:1px solid #d8d8d8;padding-top:8px;font-feature-settings:'tnum'"><span>Unspent</span><span>{{ unspentLocal }}</span></div>
+              </div>
+              <p style="font-size:13px;line-height:1.6;color:#333333;margin:0 0 22px">You can carry on from step 04 and finish the folio, or leave it — nothing expires and nothing was lost.</p>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <button onClick="{{ startSteps }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="background:#1a2fd6;border-color:#1a2fd6">Carry on from step 04</button>
+                <button onClick="{{ goHome }}" style="width:100%;min-height:46px;background:transparent;color:#111111;border:1px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="border-color:#1a2fd6;color:#1a2fd6">Leave it for now</button>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- 10 Detail -->
+      <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #111111">
+            <button onClick="{{ goHome }}" style="background:transparent;border:0;padding:6px;margin:-6px;cursor:pointer;min-width:32px;min-height:32px;color:#111111;font-size:15px;font-family:'IBM Plex Mono',monospace" style-hover="color:#1a2fd6">&#8592;</button>
+            <span style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;flex:1">Folio</span>
+          </div>
+
+          <div style="padding:26px 20px 20px;border-bottom:1px solid #111111">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#1a2fd6;margin-bottom:12px">Bought just now · sent as a gift</div>
+            <h1 style="font-weight:700;font-size:32px;line-height:1;letter-spacing:-0.035em;text-transform:uppercase;margin:0 0 16px">{{ folioNameOrDefault }}</h1>
+            <div style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:40px;line-height:1;letter-spacing:-0.03em;font-feature-settings:'tnum'">{{ amountLocal }}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5858;margin-top:10px;font-feature-settings:'tnum'">{{ detailSecondary }}</div>
+            <div style="display:inline-flex;margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#fcfcfc;background:#111111;padding:5px 9px">Waiting to be claimed · unlocks {{ unlockPretty }}</div>
+          </div>
+
+          <div style="margin:20px;border:2px solid #1a2fd6;padding:18px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#1a2fd6;margin-bottom:10px">Hand this over</div>
+            <p style="font-family:'Instrument Serif',serif;font-size:24px;line-height:1.2;margin:0 0 10px">This link is the only <em style="font-style:italic">key</em>.</p>
+            <p style="font-size:12.5px;line-height:1.6;color:#333333;margin:0 0 14px">Whoever opens it can claim the folio. If you lose it, nobody can — the gift comes back to you when it expires. Send it, then keep a copy.</p>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.5;word-break:break-all;background:#f3efef;border:1px solid #d8d8d8;padding:10px;margin-bottom:14px">folio.xyz/claim/8f2a#k=7Qx4mL9vRb2cE</div>
+            <div style="display:flex;gap:10px">
+              <button onClick="{{ copyLink }}" style="flex:1;min-height:46px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer" style-hover="background:#1a2fd6;border-color:#1a2fd6">{{ copyLabel }}</button>
+              <button onClick="{{ goClaim }}" style="flex:1;min-height:46px;background:transparent;color:#111111;border:1px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer" style-hover="border-color:#1a2fd6;color:#1a2fd6">Preview it</button>
+            </div>
+          </div>
+
+          <div style="padding:0 20px 34px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin-bottom:2px">What is inside</div>
+            <sc-for list="{{ legs }}" as="leg" hint-placeholder-count="2">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:13px 0;border-top:1px solid #d8d8d8">
+                <span style="min-width:0">
+                  <span style="display:block;font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase">{{ leg.name }}</span>
+                  <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;margin-top:3px;font-feature-settings:'tnum'">{{ leg.shares }} share-equivalents</span>
+                </span>
+                <span style="text-align:right;flex:none;font-family:'IBM Plex Mono',monospace;font-feature-settings:'tnum'">
+                  <span style="display:block;font-weight:500;font-size:16px">{{ leg.cost }}</span>
+                  <span style="display:block;font-size:10.5px;color:#8a8a8a;margin-top:3px">{{ leg.weight }}</span>
+                </span>
+              </div>
+            </sc-for>
+            <p style="font-size:11px;line-height:1.6;color:#8a8a8a;margin:16px 0 0;border-top:1px solid #111111;padding-top:14px">Share-equivalents, adjusted for dividends and splits. Folio holds these in a vault in the owner's name; it does not issue them and is not a broker.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 11 Claim -->
+      <sc-if value="{{ isClaim }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%;background:#f3efef;padding:20px 16px 26px;animation:folio-rise 340ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="background:#fcfcfc;border:2px solid #111111;padding:22px 20px 20px;position:relative">
+            <div style="position:absolute;left:-2px;right:-2px;top:-2px;height:6px;background:#1a2fd6"></div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#1a2fd6;margin:8px 0 22px">Set aside for you</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#8a8a8a;margin-bottom:8px">From Mãe</div>
+            <h1 style="font-weight:700;font-size:34px;line-height:0.98;letter-spacing:-0.04em;text-transform:uppercase;margin:0 0 20px">{{ folioNameOrDefault }}</h1>
+            <div style="height:1px;background:#111111;margin-bottom:18px"></div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8a8a8a;margin-bottom:8px">Worth today</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:46px;line-height:1;letter-spacing:-0.03em;font-feature-settings:'tnum'">{{ amountLocal }}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5858;margin-top:10px;font-feature-settings:'tnum'">{{ detailSecondary }}</div>
+
+            <div style="margin-top:22px">
+              <sc-for list="{{ legs }}" as="leg" hint-placeholder-count="2">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #d8d8d8">
+                  <span style="font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase">{{ leg.name }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5a5858;font-feature-settings:'tnum'">{{ leg.shares }} sh</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="margin-top:20px;padding:13px;background:#080808;color:#fcfcfc">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.6"><span style="color:#8f9dff">It is already yours.</span> You can watch it from today. The shares can be taken out from {{ unlockPretty }}.</span>
+            </div>
+
+            <p style="font-family:'Instrument Serif',serif;font-size:17px;line-height:1.45;color:#333333;margin:18px 0 0">These are real shares in real American companies, bought at market and held in a vault in your name. No one can move them but you.</p>
+          </div>
+
+          <button onClick="{{ goWallet }}" style="width:100%;min-height:54px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;margin-top:18px" style-hover="background:#1a2fd6;border-color:#1a2fd6">Make it mine</button>
+          <p style="font-size:11px;line-height:1.6;color:#5a5858;margin:12px 2px 0">Takes about a minute. Your face or fingerprint — no passwords, nothing to download. Folio is not a broker and promises no return.</p>
+        </div>
+      </sc-if>
+
+      <!-- 12 Standing order -->
+      <sc-if value="{{ isRepeat }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #111111">
+            <button onClick="{{ goDetail }}" style="background:transparent;border:0;padding:6px;margin:-6px;cursor:pointer;min-width:32px;min-height:32px;color:#111111;font-size:15px;font-family:'IBM Plex Mono',monospace" style-hover="color:#1a2fd6">&#8592;</button>
+            <span style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;flex:1">Standing order</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#1a2fd6">{{ repeatStateLabel }}</span>
+          </div>
+          <div style="padding:26px 20px 34px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#1a2fd6;margin-bottom:14px">Same basket, same weights</div>
+            <h2 style="font-weight:700;font-size:27px;line-height:1.02;letter-spacing:-0.035em;text-transform:uppercase;margin:0 0 12px">Keep feeding<br>it<span style="color:#1a2fd6">.</span></h2>
+            <p style="font-size:13.5px;line-height:1.6;color:#333333;margin:0 0 18px">One sentence bought it once. A standing order buys it again on a day you choose, at the same weights, until you stop it.</p>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin-bottom:9px">How much each time</div>
+            <div style="display:flex;gap:0;border-left:1px solid #d8d8d8">
+              <sc-for list="{{ repeatPresets }}" as="p" hint-placeholder-count="3">
+                <sc-if value="{{ p.on }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ p.use }}" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:12px;font-feature-settings:'tnum';min-height:44px;border:0;border-right:1px solid #111111;border-top:1px solid #111111;border-bottom:1px solid #111111;background:#111111;color:#fcfcfc;cursor:pointer">{{ p.label }}</button>
+                </sc-if>
+                <sc-if value="{{ p.off }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ p.use }}" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:12px;font-feature-settings:'tnum';min-height:44px;border:0;border-right:1px solid #d8d8d8;border-top:1px solid #d8d8d8;border-bottom:1px solid #d8d8d8;background:transparent;color:#111111;cursor:pointer" style-hover="background:#f3efef">{{ p.label }}</button>
+                </sc-if>
+              </sc-for>
+            </div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin:24px 0 0">When</div>
+            <sc-for list="{{ cadences }}" as="c" hint-placeholder-count="3">
+              <button onClick="{{ c.pick }}" style="width:100%;text-align:left;font:inherit;color:#111111;background:transparent;border:0;border-top:1px solid #d8d8d8;padding:14px 0;min-height:54px;cursor:pointer;display:flex;gap:12px;align-items:flex-start">
+                <span style="flex:none;width:16px;height:16px;margin-top:2px;border:1px solid #111111;display:grid;place-items:center">
+                  <sc-if value="{{ c.on }}" hint-placeholder-val="{{ false }}">
+                    <span style="width:8px;height:8px;background:#1a2fd6;display:block"></span>
+                  </sc-if>
+                </span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-weight:700;font-size:13px;letter-spacing:0.08em;text-transform:uppercase">{{ c.label }}</span>
+                  <span style="display:block;font-size:12.5px;line-height:1.5;color:#5a5858;margin-top:4px">{{ c.note }}</span>
+                </span>
+              </button>
+            </sc-for>
+
+            <div style="border-top:1px solid #111111;margin-top:24px;padding-top:18px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin-bottom:10px">Next three</div>
+              <sc-for list="{{ nextDates }}" as="d" hint-placeholder-count="3">
+                <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #d8d8d8;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-feature-settings:'tnum'">
+                  <span>{{ d.date }}</span>
+                  <span style="color:#5a5858">{{ d.amount }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <p style="font-size:11.5px;line-height:1.6;color:#8a8a8a;margin:16px 0 22px">If your balance is short on the day we skip that one and tell you — nothing is borrowed, nothing is sold. Prices move, so the share count differs every time.</p>
+
+            <sc-if value="{{ repeatOff }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ toggleRepeat }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="background:#1a2fd6;border-color:#1a2fd6">Start the standing order</button>
+            </sc-if>
+            <sc-if value="{{ repeatOn }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="padding:13px;background:#080808;color:#fcfcfc">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.6"><span style="color:#8f9dff">Running.</span> Next buy {{ nextDateShort }}. We will show you the basket the morning before.</span>
+                </div>
+                <button onClick="{{ toggleRepeat }}" style="width:100%;min-height:46px;background:transparent;color:#111111;border:1px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="border-color:#1a2fd6;color:#1a2fd6">Stop it</button>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 13 Drift -->
+      <sc-if value="{{ isDrift }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #111111">
+            <button onClick="{{ goDetail }}" style="background:transparent;border:0;padding:6px;margin:-6px;cursor:pointer;min-width:32px;min-height:32px;color:#111111;font-size:15px;font-family:'IBM Plex Mono',monospace" style-hover="color:#1a2fd6">&#8592;</button>
+            <span style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;flex:1">Drift</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#1a2fd6">Since 12 Mar</span>
+          </div>
+          <div style="padding:26px 20px 34px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#1a2fd6;margin-bottom:14px">What you asked for vs what you hold</div>
+            <p style="font-family:'Instrument Serif',serif;font-size:25px;line-height:1.24;margin:0 0 22px">You asked for chips, evenly. It has quietly become <em style="font-style:italic">mostly NVIDIA</em>.</p>
+
+            <div style="border-top:1px solid #111111;padding-top:16px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+                <span style="font-weight:700;font-size:14px;letter-spacing:0.06em;text-transform:uppercase">NVIDIA</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-feature-settings:'tnum'">58.4% <span style="color:#1a2fd6">+8.4pp</span></span>
+              </div>
+              <div style="position:relative;height:10px;background:#e4e0e0;margin:10px 0 4px">
+                <div style="position:absolute;left:0;top:0;bottom:0;width:58.4%;background:#111111"></div>
+                <div style="position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;background:#1a2fd6"></div>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;font-feature-settings:'tnum'">Target 50% · 0.063227 sh</div>
+            </div>
+
+            <div style="border-top:1px solid #d8d8d8;margin-top:20px;padding-top:16px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+                <span style="font-weight:700;font-size:14px;letter-spacing:0.06em;text-transform:uppercase">SanDisk</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-feature-settings:'tnum'">41.6% <span style="color:#1a2fd6">&#8722;8.4pp</span></span>
+              </div>
+              <div style="position:relative;height:10px;background:#e4e0e0;margin:10px 0 4px">
+                <div style="position:absolute;left:0;top:0;bottom:0;width:41.6%;background:#111111"></div>
+                <div style="position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;background:#1a2fd6"></div>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;font-feature-settings:'tnum'">Target 50% · 0.008652 sh</div>
+            </div>
+
+            <div style="border:1px solid #111111;margin-top:24px;padding:16px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#1a2fd6;margin-bottom:12px">Bringing it back</div>
+              <div style="display:flex;justify-content:space-between;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;padding-bottom:9px;font-feature-settings:'tnum'"><span style="color:#8a8a8a">Sell</span><span>0.004301 NVDA</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;border-top:1px solid #d8d8d8;padding:9px 0;font-feature-settings:'tnum'"><span style="color:#8a8a8a">Buy</span><span>0.000587 SNDK</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;border-top:1px solid #d8d8d8;padding-top:9px;font-feature-settings:'tnum'"><span style="color:#8a8a8a">Costs</span><span>{{ rebalanceCost }}</span></div>
+            </div>
+            <p style="font-size:12px;line-height:1.6;color:#333333;margin:14px 0 18px">Selling is a sale. Depending on where you live that may be a taxable event, and Folio does not report it for you. Drift is not a fault — a basket that ran is still the basket you asked for.</p>
+
+            <div onClick="{{ toggleAutoRebalance }}" style="display:flex;gap:13px;align-items:flex-start;padding:15px 0;min-height:44px;cursor:pointer;border-top:1px solid #111111;border-bottom:1px solid #111111;margin-bottom:20px">
+              <span style="flex:none;width:18px;height:18px;margin-top:1px;border:1px solid #111111;display:grid;place-items:center;background:#ffffff">
+                <sc-if value="{{ autoRebalance }}" hint-placeholder-val="{{ false }}">
+                  <span style="width:9px;height:9px;background:#1a2fd6;display:block"></span>
+                </sc-if>
+              </span>
+              <span style="font-size:13px;line-height:1.5;color:#111111">Bring it back on its own whenever any holding drifts more than 10pp.</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <button onClick="{{ goDetail }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="background:#1a2fd6;border-color:#1a2fd6">Bring it back</button>
+              <button onClick="{{ goDetail }}" style="width:100%;min-height:46px;background:transparent;color:#111111;border:1px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="border-color:#1a2fd6;color:#1a2fd6">Leave it as it is</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 14 Campaign -->
+      <sc-if value="{{ isCampaign }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%;background:#f3efef;padding:20px 16px 26px;animation:folio-rise 340ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="background:#fcfcfc;border:2px solid #111111;padding:22px 20px 20px;position:relative">
+            <div style="position:absolute;left:-2px;right:-2px;top:-2px;height:6px;background:#1a2fd6"></div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#1a2fd6;margin:8px 0 20px">Funded by Paystack</div>
+            <h1 style="font-weight:700;font-size:33px;line-height:0.98;letter-spacing:-0.04em;text-transform:uppercase;margin:0 0 16px">{{ campaignAmount }} to<br>start you<br>off<span style="color:#1a2fd6">.</span></h1>
+            <p style="font-size:13.5px;line-height:1.6;color:#333333;margin:0 0 18px">Paystack has paid for a first folio for the first 5,000 people who open one. It is a real purchase in your name, not credit and not points.</p>
+            <div style="height:1px;background:#111111;margin-bottom:4px"></div>
+            <sc-for list="{{ campaignTerms }}" as="t" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #d8d8d8;font-family:'IBM Plex Mono',monospace;font-size:12px;font-feature-settings:'tnum'">
+                <span style="color:#8a8a8a;letter-spacing:0.06em;text-transform:uppercase;font-size:10.5px;align-self:center">{{ t.label }}</span>
+                <span style="text-align:right">{{ t.value }}</span>
+              </div>
+            </sc-for>
+            <p style="font-size:11.5px;line-height:1.6;color:#8a8a8a;margin:16px 0 0">Paystack funded it and is told only that it was claimed. They do not see your name, your wallet, or anything else you hold.</p>
+          </div>
+          <button onClick="{{ goWallet }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;min-height:54px;font-size:13px;margin-top:18px" style-hover="background:#1a2fd6;border-color:#1a2fd6">Claim it</button>
+          <div style="display:flex;justify-content:center;margin-top:10px">
+            <button onClick="{{ goDoor }}" style="background:transparent;border:0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5858;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px" style-hover="color:#1a2fd6">Look around first</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 15 Sealed -->
+      <sc-if value="{{ isSealed }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:36px 24px 28px;display:flex;flex-direction:column;min-height:100%;background:#080808;color:#fcfcfc;position:relative;animation:folio-rise 340ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div aria-hidden="true" style="position:absolute;right:-10px;bottom:-30px;font-family:'Instrument Serif',serif;font-style:italic;font-size:200px;line-height:1;color:#161516;user-select:none">wait</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#8f9dff;margin-bottom:16px;position:relative">Sealed until {{ unlockPretty }}</div>
+          <div style="position:relative;width:74px;height:74px;border:2px solid #fcfcfc;display:grid;place-items:center;margin-bottom:22px">
+            <span style="width:2px;height:74px;background:#8f9dff;display:block"></span>
+          </div>
+          <h1 style="font-weight:700;font-size:31px;line-height:1.02;letter-spacing:-0.035em;text-transform:uppercase;margin:0 0 18px;position:relative">Mãe left this<br>for you<span style="color:#8f9dff">.</span></h1>
+          <p style="font-family:'Instrument Serif',serif;font-size:20px;line-height:1.4;color:#d4d2d2;margin:0 0 20px;position:relative">&#8220;For the year you finish. Do not open it early — I will know.&#8221;</p>
+          <div style="display:flex;gap:22px;position:relative;border-top:1px solid #2a2929;border-bottom:1px solid #2a2929;padding:16px 0;margin-bottom:18px">
+            <span>
+              <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin-bottom:6px">Opens in</span>
+              <span style="display:block;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:26px;font-feature-settings:'tnum'">{{ daysToUnlock }}</span>
+            </span>
+            <span>
+              <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin-bottom:6px">Worth today</span>
+              <span style="display:block;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:26px;font-feature-settings:'tnum'">{{ amountLocal }}</span>
+            </span>
+          </div>
+
+          <sc-if value="{{ peeked }}" hint-placeholder-val="{{ false }}">
+            <div style="position:relative;margin-bottom:18px">
+              <sc-for list="{{ legs }}" as="leg" hint-placeholder-count="2">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid #2a2929">
+                  <span style="font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase">{{ leg.name }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8a8a;font-feature-settings:'tnum'">{{ leg.shares }} sh</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <div style="margin-top:auto;padding-top:24px;position:relative;display:flex;flex-direction:column;gap:10px">
+            <button onClick="{{ togglePeek }}" style="width:100%;min-height:50px;background:transparent;color:#fcfcfc;border:1px solid #fcfcfc;font-family:'Archivo',sans-serif;font-weight:700;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="border-color:#8f9dff;color:#8f9dff">{{ peekLabel }}</button>
+            <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:#8a8a8a;margin:0">It is already yours and it is already invested — the seal only holds the opening, not the money.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 16 Locked -->
+      <sc-if value="{{ isLocked }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #111111">
+            <button onClick="{{ goHome }}" style="background:transparent;border:0;padding:6px;margin:-6px;cursor:pointer;min-width:32px;min-height:32px;color:#111111;font-size:15px;font-family:'IBM Plex Mono',monospace" style-hover="color:#1a2fd6">&#8592;</button>
+            <span style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;flex:1">Ada school</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#1a2fd6">{{ lockStateLabel }}</span>
+          </div>
+          <sc-if value="{{ lockIntact }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:12px 20px;background:#080808;color:#fcfcfc">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase"><span style="color:#8f9dff">Locked</span> until {{ unlockPretty }}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ lockBroken }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:12px 20px;background:#f3efef;border-bottom:1px solid #111111">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.55;color:#333333"><span style="color:#1a2fd6">The lock is off.</span> The shares can be taken out from now on. This cannot be put back.</span>
+            </div>
+          </sc-if>
+
+          <div style="padding:26px 20px 34px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:40px;line-height:1;letter-spacing:-0.03em;font-feature-settings:'tnum'">{{ folioAValue }}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5858;margin-top:10px;font-feature-settings:'tnum'">Apple, NVIDIA, Microsoft, Alphabet · held in Ada's name</div>
+
+            <div style="margin:24px 0 8px;position:relative;height:10px;background:#e4e0e0">
+              <div style="position:absolute;left:0;top:0;bottom:0;width:38%;background:#111111"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;font-feature-settings:'tnum'">
+              <span>12 Mar 2026</span>
+              <span>{{ unlockPretty }}</span>
+            </div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin:26px 0 0">While it is locked</div>
+            <sc-for list="{{ lockRules }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex;gap:12px;align-items:baseline;padding:12px 0;border-top:1px solid #d8d8d8">
+                <span style="flex:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:{{ r.color }};width:14px">{{ r.mark }}</span>
+                <span style="flex:1;font-size:13px;line-height:1.5;color:#333333">{{ r.text }}</span>
+              </div>
+            </sc-for>
+
+            <sc-if value="{{ lockIntact }}" hint-placeholder-val="{{ true }}">
+              <sc-if value="{{ notBreaking }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;justify-content:center;margin-top:26px">
+                  <button onClick="{{ startBreak }}" style="background:transparent;border:0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a5858;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px" style-hover="color:#1a2fd6">Break the lock early</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ breaking }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:24px;border:2px solid #111111;padding:18px">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#1a2fd6;margin-bottom:12px">Read this twice</div>
+                  <p style="font-size:13.5px;line-height:1.6;color:#333333;margin:0 0 12px">Breaking the lock is permanent. There is no second lock, and the date you chose disappears from the record the recipient sees.</p>
+                  <p style="font-size:13.5px;line-height:1.6;color:#333333;margin:0 0 18px">The shares are not sold and nothing leaves the vault — only the restriction goes.</p>
+                  <div style="display:flex;flex-direction:column;gap:10px">
+                    <button onClick="{{ confirmBreak }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="background:#1a2fd6;border-color:#1a2fd6">Break it — I understand</button>
+                    <button onClick="{{ cancelBreak }}" style="width:100%;min-height:46px;background:transparent;color:#111111;border:1px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="border-color:#1a2fd6;color:#1a2fd6">Keep it locked</button>
+                  </div>
+                </div>
+              </sc-if>
+            </sc-if>
+
+            <sc-if value="{{ lockBroken }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ goProof }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;margin-top:26px" style-hover="background:#1a2fd6;border-color:#1a2fd6">See the receipt</button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 17 Proof of holding -->
+      <sc-if value="{{ isProof }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #111111">
+            <button onClick="{{ goDetail }}" style="background:transparent;border:0;padding:6px;margin:-6px;cursor:pointer;min-width:32px;min-height:32px;color:#111111;font-size:15px;font-family:'IBM Plex Mono',monospace" style-hover="color:#1a2fd6">&#8592;</button>
+            <span style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;flex:1">Proof of holding</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#1a2fd6">Receipt</span>
+          </div>
+          <div style="padding:24px 20px 34px">
+            <div style="border:2px solid #111111;position:relative;padding:20px 18px 18px">
+              <div style="position:absolute;left:-2px;right:-2px;top:-2px;height:6px;background:#1a2fd6"></div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#1a2fd6;margin:6px 0 18px">Custody receipt</div>
+              <h2 style="font-weight:700;font-size:23px;line-height:1.05;letter-spacing:-0.03em;text-transform:uppercase;margin:0 0 6px">{{ folioNameOrDefault }}</h2>
+              <p style="font-family:'Instrument Serif',serif;font-size:19px;line-height:1.35;color:#333333;margin:0 0 20px">Held in a vault in your name. Anyone can check this — <em style="font-style:italic">no one has to take our word</em>.</p>
+              <sc-for list="{{ proofRows }}" as="r" hint-placeholder-count="8">
+                <div style="display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-top:1px solid #d8d8d8;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-feature-settings:'tnum'">
+                  <span style="color:#8a8a8a;letter-spacing:0.06em;text-transform:uppercase;font-size:10px;flex:none;align-self:center">{{ r.label }}</span>
+                  <span style="text-align:right;word-break:break-all">{{ r.value }}</span>
+                </div>
+              </sc-for>
+              <div style="margin-top:16px;padding:11px;background:#f3efef;border:1px solid #d8d8d8;font-family:'IBM Plex Mono',monospace;font-size:10.5px;line-height:1.5;word-break:break-all;color:#333333">0x9f41c2ab7e5d3068bb14a0f7c2d95e83a61470f2cd8b39ee5a7c04d1b6928f3a</div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:16px">
+              <button onClick="{{ copyLink }}" style="flex:1;min-height:46px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer" style-hover="background:#1a2fd6;border-color:#1a2fd6">{{ copyReceiptLabel }}</button>
+              <button onClick="{{ goLedger }}" style="flex:1;min-height:46px;background:transparent;color:#111111;border:1px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer" style-hover="border-color:#1a2fd6;color:#1a2fd6">Open on Base &#8599;</button>
+            </div>
+            <p style="font-size:11px;line-height:1.6;color:#8a8a8a;margin:16px 0 0;border-top:1px solid #111111;padding-top:14px">The vault holds share-equivalents issued by a regulated custodian abroad. Folio cannot move them; only the address above can.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 18 Partial fill -->
+      <sc-if value="{{ isPartial }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #111111">
+            <button onClick="{{ goHome }}" style="background:transparent;border:0;padding:6px;margin:-6px;cursor:pointer;min-width:32px;min-height:32px;color:#111111;font-size:15px;font-family:'IBM Plex Mono',monospace" style-hover="color:#1a2fd6">&#8592;</button>
+            <span style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;flex:1">Partly filled</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#1a2fd6">Order 8f2a</span>
+          </div>
+          <div style="padding:26px 20px 34px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#1a2fd6;margin-bottom:14px">Three of four went through</div>
+            <h2 style="font-weight:700;font-size:27px;line-height:1.02;letter-spacing:-0.035em;text-transform:uppercase;margin:0 0 12px">Most of it<br>bought<span style="color:#1a2fd6">.</span></h2>
+            <p style="font-size:13.5px;line-height:1.6;color:#333333;margin:0 0 18px">The market moved while your order was in flight. Three legs filled inside the worst case you were shown; one did not, so we did not buy it at a price you never agreed to.</p>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8a8a;margin-bottom:2px">Filled</div>
+            <sc-for list="{{ filledLegs }}" as="l" hint-placeholder-count="3">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #d8d8d8">
+                <span style="min-width:0">
+                  <span style="display:block;font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase">{{ l.name }}</span>
+                  <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;margin-top:3px;font-feature-settings:'tnum'">{{ l.shares }} sh · {{ l.slip }}</span>
+                </span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:15px;font-feature-settings:'tnum'">{{ l.cost }}</span>
+              </div>
+            </sc-for>
+
+            <div style="margin-top:22px;background:#080808;color:#fcfcfc;padding:16px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8f9dff;margin-bottom:10px">Not filled</div>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px">
+                <span style="font-weight:700;font-size:14px;letter-spacing:0.06em;text-transform:uppercase">SanDisk</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-feature-settings:'tnum'">{{ unfilledCost }}</span>
+              </div>
+              <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.6;color:#d4d2d2;margin:0">The pool moved 2.1% past your worst case. Your money for this leg was never spent — it is back in your balance already.</p>
+            </div>
+
+            <div style="border:1px solid #111111;margin-top:18px;padding:16px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#1a2fd6;margin-bottom:12px">If you fill it now</div>
+              <div style="display:flex;justify-content:space-between;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;padding-bottom:9px;font-feature-settings:'tnum'"><span style="color:#8a8a8a">Price now</span><span>{{ retryPrice }}</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;border-top:1px solid #d8d8d8;padding:9px 0;font-feature-settings:'tnum'"><span style="color:#8a8a8a">Against your worst case</span><span style="color:#1a2fd6">+2.1%</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;border-top:1px solid #d8d8d8;padding-top:9px;font-feature-settings:'tnum'"><span style="color:#8a8a8a">You would get</span><span>0.008482 sh</span></div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
+              <button onClick="{{ goDetail }}" style="width:100%;min-height:52px;background:#111111;color:#fcfcfc;border:2px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="background:#1a2fd6;border-color:#1a2fd6">Fill the last leg at market</button>
+              <button onClick="{{ goDetail }}" style="width:100%;min-height:46px;background:transparent;color:#111111;border:1px solid #111111;font-family:'Archivo',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer" style-hover="border-color:#1a2fd6;color:#1a2fd6">Keep the three, refund the rest</button>
+            </div>
+            <p style="font-size:11px;line-height:1.6;color:#8a8a8a;margin:16px 0 0">Either way the three that filled are yours and are already in the folio. Nothing here expires.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 19 Passbook -->
+      <sc-if value="{{ isLedger }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:folio-rise 320ms cubic-bezier(0.2,0.8,0.2,1) both">
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #111111">
+            <button onClick="{{ goDetail }}" style="background:transparent;border:0;padding:6px;margin:-6px;cursor:pointer;min-width:32px;min-height:32px;color:#111111;font-size:15px;font-family:'IBM Plex Mono',monospace" style-hover="color:#1a2fd6">&#8592;</button>
+            <span style="font-weight:700;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;flex:1">Passbook</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#1a2fd6">{{ ledgerCount }} lines</span>
+          </div>
+          <div style="display:flex;gap:0;border-bottom:1px solid #111111">
+            <sc-for list="{{ ledgerFilters }}" as="fl" hint-placeholder-count="3">
+              <sc-if value="{{ fl.on }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ fl.pick }}" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;min-height:40px;border:0;border-right:1px solid #111111;background:#111111;color:#fcfcfc;cursor:pointer">{{ fl.label }}</button>
+              </sc-if>
+              <sc-if value="{{ fl.off }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ fl.pick }}" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;min-height:40px;border:0;border-right:1px solid #d8d8d8;background:transparent;color:#5a5858;cursor:pointer" style-hover="background:#f3efef;color:#111111">{{ fl.label }}</button>
+              </sc-if>
+            </sc-for>
+          </div>
+
+          <div style="padding:0 20px 34px">
+            <sc-for list="{{ ledgerRows }}" as="r" hint-placeholder-count="7">
+              <button onClick="{{ goProof }}" style="width:100%;text-align:left;font:inherit;color:#111111;background:transparent;border:0;border-bottom:1px solid #d8d8d8;padding:14px 0;cursor:pointer;display:flex;gap:12px;align-items:baseline;transition:padding-left 240ms cubic-bezier(0.2,0.8,0.2,1)" style-hover="padding-left:10px;background:#f3efef">
+                <span style="flex:none;width:52px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8a8a;font-feature-settings:'tnum'">{{ r.date }}</span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:{{ r.kindColor }}">{{ r.kind }}</span>
+                  <span style="display:block;font-size:12.5px;line-height:1.45;color:#333333;margin-top:4px">{{ r.note }}</span>
+                </span>
+                <span style="flex:none;text-align:right;font-family:'IBM Plex Mono',monospace;font-feature-settings:'tnum'">
+                  <span style="display:block;font-weight:500;font-size:13.5px">{{ r.amount }}</span>
+                  <span style="display:block;font-size:10.5px;color:#8a8a8a;margin-top:3px">{{ r.balance }}</span>
+                </span>
+              </button>
+            </sc-for>
+            <p style="font-size:11px;line-height:1.6;color:#8a8a8a;margin:16px 0 0">Every line is a transaction on Base, in order, with nothing netted off. Tap one for its receipt.</p>
+          </div>
+        </div>
+      </sc-if>
+
+
+    </div>
+
+    <div style="flex:none;height:24px;display:grid;place-items:center;border-top:1px solid #d8d8d8">
+      <span style="width:110px;height:3px;background:#111111;display:block"></span>
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:760px;border-top:1px solid #b5b2b2;padding-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.65;color:#5a5858">{{ hint }}</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;currency&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;BRL&quot;,&quot;NGN&quot;,&quot;IDR&quot;],&quot;default&quot;:&quot;BRL&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Money&quot;},&quot;staleHours&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:69,&quot;min&quot;:0,&quot;max&quot;:168,&quot;unit&quot;:&quot;h&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Money&quot;},&quot;feeCovered&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Money&quot;}}">
+const CUR = {
+  BRL: { symbol: 'R$', locale: 'pt-BR', rate: 5.12, word: 'reais', tradeable: true },
+  NGN: { symbol: '₦', locale: 'en-NG', rate: 1322, word: 'naira', tradeable: false },
+  IDR: { symbol: 'Rp', locale: 'id-ID', rate: 17655, word: 'rupiah', tradeable: true },
+};
+
+const REF_USD = { Apple: 320.08, NVIDIA: 229.96, Tesla: 353.33, Alphabet: 338.71 };
+const BALANCE_USD = 250.78;
+const SCREENS = [
+  ['gate', 'Gate'], ['blocked', 'Blocked'], ['door', 'Door'], ['wallet', 'Wallet'],
+  ['home', 'Home'], ['compose', 'Compose'], ['preview', 'Preview'], ['commit', 'Commit'],
+  ['buying', 'Buying'], ['detail', 'Detail'], ['claim', 'Claim'],
+  ['repeat', 'Repeat'], ['drift', 'Drift'], ['campaign', 'Campaign'], ['sealed', 'Sealed'],
+  ['locked', 'Locked'], ['proof', 'Proof'], ['partial', 'Partial'], ['ledger', 'Passbook'],
+];
+const HINTS = {
+  gate: 'Eligibility is a screen, not a banner. Unchecked, Continue is disabled; the link below shows the blocked state.',
+  blocked: 'The refusal sits on the void ground with a ghost letterform — a property of the asset, not a punishment.',
+  door: 'The only marketing surface. The price strip carries the staleness stamp from the first second.',
+  wallet: 'Smart wallet is visibly the recommended path; discovered wallets are a variable-length list underneath.',
+  home: 'Local currency is the whole headline. Use the header toggle to see the empty state most users meet first.',
+  compose: 'Type below the minimum, or above your balance, to see those two error states name the next action.',
+  preview: 'Two tiers: the plain-language read, then the ranked lines. Tap More + on any line for fill, reference and worst case.',
+  commit: 'Choose "Send it to someone" to reveal the unlock date. Both purchase modes start from the buttons at the bottom.',
+  buying: 'One-tap resolves on its own. Step-by-step is the six-signature path — you can break it at step 04.',
+  detail: 'The claim link gets a red-framed plate of its own: it is the only key, so it cannot be a row in a list.',
+  claim: 'The gift as a stamped certificate. Worth and contents before anyone is asked to sign in.',
+  repeat: 'A standing order on the same sentence. Cadence changes the next three dates; starting it swaps the footer for a running state.',
+  drift: 'Target sits as a blue tick on each bar; the black fill is what you actually hold. The cost of correcting it is stated before the button.',
+  campaign: 'The claim plate with a funder in the frame. The terms are a table, and the last line says what the funder is not told.',
+  sealed: 'A scheduled gift before its date, on the void ground. It is already invested — the seal only holds the opening. Peek reveals the contents.',
+  locked: 'Lock as a screen: a term bar, what is and is not allowed, and a two-step break that says plainly it cannot be undone.',
+  proof: 'The custody receipt. Everything a sceptic would ask for, set in mono, with the transaction hash in full.',
+  partial: 'Three legs filled, one refused past the worst case. The refusal is the feature — the money for it was never spent.',
+  ledger: 'The passbook the product is named for: one line per event, running balance on the right, tap for the receipt.',
+};
+
+class Component extends DCLogic {
+  state = {
+    screen: 'gate', attested: false, empty: false,
+    prompt: 'US tech that builds chips, no ads, for university',
+    amountUsd: 29.3, amountText: '', openLeg: null,
+    folioName: 'Ada 2028', give: 'send', unlock: '2028-03-12',
+    mode: 'onetap', step: 0, copied: false,
+    cadence: 'monthly', repeat: false, repeatUsd: 9.77, autoRebalance: false,
+    peek: false, breaking: false, lockOff: false, ledgerFilter: 'all',
+  };
+
+  componentDidMount() { this.setState({ amountText: this.round(29.3) }); }
+  componentWillUnmount() { clearTimeout(this.t); clearInterval(this.iv); }
+
+  cur() { return CUR[this.props.currency] ?? CUR.BRL; }
+  local(usd) { return usd * this.cur().rate; }
+  fmt(usd, opts) {
+    const c = this.cur(), v = this.local(usd);
+    const digits = opts && opts.exact ? 2 : (v >= 1000 || this.props.currency === 'NGN' || this.props.currency === 'IDR' ? 0 : 2);
+    return new Intl.NumberFormat(c.locale, { style: 'currency', currency: this.props.currency ?? 'BRL', maximumFractionDigits: digits, minimumFractionDigits: 0 }).format(v);
+  }
+  round(usd) {
+    const v = this.local(usd);
+    return v >= 1000 ? String(Math.round(v)) : v.toFixed(2).replace(/\.00$/, '');
+  }
+  pad(n) { return n < 10 ? '0' + n : String(n); }
+  go(screen) {
+    return () => {
+      clearTimeout(this.t); clearInterval(this.iv);
+      this.setState({ screen, copied: false });
+      if (screen === 'buying') this.setState({ mode: 'onetap' });
+    };
+  }
+
+  runSteps() {
+    clearInterval(this.iv);
+    this.setState({ screen: 'buying', mode: 'steps', step: this.state.mode === 'stopped' ? 3 : 0 });
+    this.iv = setInterval(() => {
+      this.setState((s) => {
+        if (s.mode !== 'steps') return s;
+        if (s.step >= 5) { clearInterval(this.iv); return { screen: 'detail' }; }
+        return { step: s.step + 1 };
+      });
+    }, 1100);
+  }
+
+  extra(s, cur, code) {
+    const fmt = (usd, exact) => this.fmt(usd, exact ? { exact: true } : undefined);
+    const unlock = new Date(s.unlock + 'T12:00:00');
+    const pretty = (d) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const short = (d) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    const days = Math.max(0, Math.round((unlock - new Date('2026-09-08T12:00:00')) / 86400000));
+
+    const cadences = [
+      ['weekly', 'Every week', 'Monday morning, small and often.', 7],
+      ['payday', 'Every payday', 'The 25th, or the Friday before it.', 30],
+      ['monthly', 'Every month', 'The same date you started on.', 30],
+    ];
+    const stepDays = (cadences.find((c) => c[0] === s.cadence) ?? cadences[2])[3];
+    const repeatUsd = s.repeatUsd ?? 9.77;
+    const nextDates = [1, 2, 3].map((i) => {
+      const d = new Date('2026-09-08T12:00:00');
+      d.setDate(d.getDate() + stepDays * i);
+      return { date: pretty(d), amount: fmt(repeatUsd, true) };
+    });
+
+    const kinds = {
+      BOUGHT: '#111111', 'GIFT SENT': '#1a2fd6', CLAIMED: '#1a2fd6',
+      DIVIDEND: '#111111', REBALANCE: '#5a5858', DEPOSIT: '#5a5858', 'FEE COVERED': '#5a5858',
+    };
+    const led = [
+      ['08 SEP', 'BOUGHT', 'Ada 2028 · 0.0632 NVDA, 0.0087 SNDK', 29.3, 221.48, 'shares'],
+      ['08 SEP', 'FEE COVERED', 'Network fee paid by Folio', 0.42, 221.48, 'money'],
+      ['02 SEP', 'DIVIDEND', 'Apple · 0.24 per share, reinvested', 0.11, 250.78, 'shares'],
+      ['28 AUG', 'REBALANCE', 'Ada school brought back to target', 0.19, 250.67, 'shares'],
+      ['21 AUG', 'GIFT SENT', 'My first Apple · link handed over', 18.75, 250.86, 'shares'],
+      ['14 AUG', 'DEPOSIT', 'Added from your bank', 120.0, 269.61, 'money'],
+      ['02 AUG', 'CLAIMED', 'Paystack campaign · funded folio', 7.56, 149.61, 'shares'],
+    ].filter((r) => s.ledgerFilter === 'all' || r[5] === s.ledgerFilter);
+
+    return {
+      isRepeat: s.screen === 'repeat', isDrift: s.screen === 'drift', isCampaign: s.screen === 'campaign',
+      isSealed: s.screen === 'sealed', isLocked: s.screen === 'locked', isProof: s.screen === 'proof',
+      isPartial: s.screen === 'partial', isLedger: s.screen === 'ledger',
+      goProof: this.go('proof'), goLedger: this.go('ledger'),
+
+      repeatPresets: [4.88, 9.77, 19.53].map((usd) => ({
+        label: this.round(usd), on: Math.abs(usd - repeatUsd) < 0.01, off: Math.abs(usd - repeatUsd) >= 0.01,
+        use: () => this.setState({ repeatUsd: usd }),
+      })),
+      cadences: cadences.map(([id, label, note]) => ({
+        label, note, on: s.cadence === id, pick: () => this.setState({ cadence: id }),
+      })),
+      nextDates, nextDateShort: short(new Date(new Date('2026-09-08T12:00:00').getTime() + stepDays * 86400000)),
+      repeatOn: s.repeat, repeatOff: !s.repeat,
+      repeatStateLabel: s.repeat ? 'Running' : 'Not set up',
+      toggleRepeat: () => this.setState({ repeat: !s.repeat }),
+
+      rebalanceCost: fmt(0.19, true),
+      autoRebalance: s.autoRebalance,
+      toggleAutoRebalance: () => this.setState({ autoRebalance: !s.autoRebalance }),
+
+      campaignAmount: fmt(7.56),
+      campaignTerms: [
+        { label: 'Funded', value: fmt(7.56) },
+        { label: 'Claim by', value: '30 Sep 2026' },
+        { label: 'Buys', value: 'Apple · one basket' },
+        { label: 'Yours', value: 'Immediately, no lock' },
+      ],
+
+      daysToUnlock: days + ' days',
+      peeked: s.peek, peekLabel: s.peek ? 'Hide the contents' : 'See what is inside',
+      togglePeek: () => this.setState({ peek: !s.peek }),
+
+      lockIntact: !s.lockOff, lockBroken: s.lockOff,
+      lockStateLabel: s.lockOff ? 'Unlocked' : 'Locked',
+      breaking: s.breaking && !s.lockOff, notBreaking: !s.breaking && !s.lockOff,
+      startBreak: () => this.setState({ breaking: true }),
+      cancelBreak: () => this.setState({ breaking: false }),
+      confirmBreak: () => this.setState({ lockOff: true, breaking: false }),
+      lockRules: [
+        { mark: '+', color: '#111111', text: 'Ada can watch it, every day, from her own phone.' },
+        { mark: '+', color: '#111111', text: 'Anyone can add to it — birthdays, a good month.' },
+        { mark: '\u2212', color: '#1a2fd6', text: 'The shares cannot be taken out or sold.' },
+        { mark: '\u2212', color: '#1a2fd6', text: 'It cannot be given on to someone else.' },
+      ],
+
+      proofRows: [
+        { label: 'Owner', value: '0x7Ac4\u20268b21' },
+        { label: 'Vault', value: '0x1De9\u2026c034' },
+        { label: 'Chain', value: 'Base · 8453' },
+        { label: 'Holdings', value: '0.063227 NVDA' },
+        { label: '', value: '0.008652 SNDK' },
+        { label: 'Custodian', value: 'Backed Finance AG' },
+        { label: 'Block', value: '24,918,203' },
+        { label: 'Stamped', value: '08 Sep 2026 09:41' },
+      ],
+      copyReceiptLabel: s.copied ? 'Receipt copied' : 'Copy the receipt',
+
+      filledLegs: [
+        { name: 'Apple', shares: '0.021940', slip: 'inside worst case', cost: fmt(7.32, true) },
+        { name: 'NVIDIA', shares: '0.031613', slip: 'inside worst case', cost: fmt(7.32, true) },
+        { name: 'Microsoft', shares: '0.014120', slip: 'inside worst case', cost: fmt(7.32, true) },
+      ],
+      unfilledCost: fmt(7.32, true),
+      retryPrice: fmt(1730.1),
+
+      ledgerCount: this.pad(led.length),
+      ledgerFilters: [['all', 'All'], ['shares', 'Shares'], ['money', 'Money']].map(([id, label]) => ({
+        label, on: s.ledgerFilter === id, off: s.ledgerFilter !== id,
+        pick: () => this.setState({ ledgerFilter: id }),
+      })),
+      ledgerRows: led.map(([date, kind, note, amt, bal]) => ({
+        date, kind, note, kindColor: kinds[kind] ?? '#111111',
+        amount: fmt(amt, true), balance: fmt(bal),
+      })),
+    };
+  }
+
+  renderVals() {
+    const s = this.state, cur = this.cur();
+    const code = this.props.currency ?? 'BRL';
+    const staleHours = this.props.staleHours ?? 69;
+    const feeCovered = this.props.feeCovered !== false;
+    const amountUsd = s.amountUsd;
+    const minUsd = 1, minLocal = Math.max(5, Math.ceil(minUsd * cur.rate));
+    const typed = parseFloat(String(s.amountText).replace(/[^0-9.,]/g, '').replace(',', '.'));
+    const tooLow = Number.isFinite(typed) && typed > 0 && typed < minLocal;
+    const overBalance = Number.isFinite(typed) && typed > this.local(BALANCE_USD);
+    const shortfall = overBalance ? typed - this.local(BALANCE_USD) : 0;
+
+    const legData = [
+      { name: 'NVIDIA', why: 'Designs the chips. The core of what you asked for.', shares: 0.063227, worst: 0.062594, fillUsd: 231.75, refUsd: 229.96, thin: false },
+      { name: 'SanDisk', why: 'Makes the memory those chips need.', shares: 0.008652, worst: 0.008566, fillUsd: 1693.4, refUsd: 1652.0, thin: true },
+    ];
+    const legs = legData.map((l, i) => {
+      const gapPct = ((l.fillUsd - l.refUsd) / l.refUsd) * 100;
+      return {
+        name: l.name, why: l.why, weight: '50%',
+        cost: this.fmt(amountUsd / 2, { exact: true }),
+        shares: l.shares.toFixed(6), worst: l.worst.toFixed(6),
+        fill: this.fmt(l.fillUsd), ref: this.fmt(l.refUsd),
+        gap: (gapPct >= 0 ? '+' : '') + gapPct.toFixed(2) + '% over ref',
+        thin: l.thin,
+        thinNote: 'This pool is thin. Your fill can move between now and the confirmation — the worst case above is what you are guaranteed.',
+        open: s.openLeg === i, closed: s.openLeg !== i,
+        toggle: () => this.setState({ openLeg: s.openLeg === i ? null : i }),
+      };
+    });
+
+    const stepLabels = [
+      ['Allow spending', 'Lets the router use your ' + (cur.tradeable ? code : 'USDC')],
+      ['Buy NVIDIA', 'Swap half the amount'],
+      ['Buy SanDisk', 'Swap the other half'],
+      ['Allow the vault', 'Lets the vault take the shares'],
+      ['Create the folio', 'Names it and mints it to you'],
+      ['Move the shares in', 'Puts both holdings inside'],
+    ];
+
+    const unlockPretty = new Date(s.unlock + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const settleNote = cur.tradeable
+      ? ''
+      : 'Naira is how we quote and show your money. There is no naira market on Base yet, so orders actually settle in USDC at ' + cur.rate.toLocaleString() + ' ' + code + ' to the dollar. You do not hold naira here.';
+    const feeValue = feeCovered ? 'Free' : this.fmt(0.42, { exact: true });
+
+    return {
+      screens: SCREENS.map(([id, label], i) => ({
+        n: this.pad(i + 1), label, active: s.screen === id, idle: s.screen !== id, go: this.go(id),
+      })),
+      hint: HINTS[s.screen] ?? '',
+      ...this.extra(s, cur, code),
+
+      isGate: s.screen === 'gate', isBlocked: s.screen === 'blocked', isDoor: s.screen === 'door',
+      isWallet: s.screen === 'wallet', isHome: s.screen === 'home', isCompose: s.screen === 'compose',
+      isPreview: s.screen === 'preview', isCommit: s.screen === 'commit', isBuying: s.screen === 'buying',
+      isDetail: s.screen === 'detail', isClaim: s.screen === 'claim',
+      goGate: this.go('gate'), goBlocked: this.go('blocked'), goDoor: this.go('door'),
+      goWallet: this.go('wallet'), goHome: this.go('home'), goCompose: this.go('compose'),
+      goPreview: this.go('preview'), goCommit: this.go('commit'), goDetail: this.go('detail'),
+      goClaim: this.go('claim'),
+
+      attested: s.attested, notAttested: !s.attested,
+      toggleAttest: () => this.setState({ attested: !s.attested }),
+      continueGate: () => s.attested && this.setState({ screen: 'door' }),
+
+      curCode: code, curSymbol: cur.symbol, curMoneyWord: cur.word,
+      curSettlesElsewhere: !cur.tradeable, settleNote,
+      staleLabel: staleHours + 'h old', staleHoursLabel: staleHours + ' hours',
+      staleSentence: 'Last updated ' + staleHours + ' hours ago, when the US market closed.',
+      pricesStale: staleHours >= 24,
+      tickerRows: Object.keys(REF_USD).map((name) => ({ name, price: this.fmt(REF_USD[name]) })),
+      howRows: [
+        { n: '01', text: 'Say what you want, in one sentence.' },
+        { n: '02', text: 'See exactly what it buys, and what it costs, in ' + cur.word + '.' },
+        { n: '03', text: 'Keep it in your name, or send it as a gift.' },
+      ],
+
+      feeValue,
+      feeNote: feeCovered ? 'We cover it on this wallet' : 'Paid from your balance',
+      feeSentence: feeCovered ? 'we cover the network fee.' : 'the network fee comes out of your balance.',
+      feeTail: feeCovered ? ', with the fee covered.' : '.',
+
+      wallets: [
+        { initial: 'M', name: 'MetaMask', note: 'Browser extension · 6 signatures', pick: this.go('home') },
+        { initial: 'R', name: 'Rainbow', note: 'Mobile · 6 signatures', pick: this.go('home') },
+      ],
+
+      balanceLocal: this.fmt(BALANCE_USD),
+      balanceSecondary: '≈ $' + BALANCE_USD.toFixed(2) + (cur.tradeable ? ' · held as BR' + 'Z' : ' · held as USDC'),
+      startAmount: this.fmt(29.3),
+      hasFolios: !s.empty, noFolios: s.empty,
+      toggleEmpty: () => this.setState({ empty: !s.empty }),
+      emptyToggleLabel: s.empty ? 'Show folios' : 'Empty state',
+      folioAValue: this.fmt(80.5), folioBValue: this.fmt(18.75),
+
+      prompt: s.prompt,
+      onPrompt: (e) => this.setState({ prompt: e.target.value }),
+      examples: [
+        { label: 'Big American software', use: () => this.setState({ prompt: 'Big American software companies' }) },
+        { label: 'Chips, no advertising', use: () => this.setState({ prompt: 'US tech that builds chips, no ads, for university' }) },
+        { label: 'One share of Apple, slowly', use: () => this.setState({ prompt: 'Just Apple, a little every month' }) },
+        { label: 'Cars and rockets', use: () => this.setState({ prompt: 'Electric cars and rockets' }) },
+      ],
+      amountText: s.amountText,
+      onAmount: (e) => {
+        const t = e.target.value;
+        const v = parseFloat(t.replace(/[^0-9.,]/g, '').replace(',', '.'));
+        this.setState({ amountText: t, amountUsd: Number.isFinite(v) && v > 0 ? v / cur.rate : s.amountUsd });
+      },
+      presets: [9.77, 29.3, 58.6, 97.66].map((usd) => ({
+        label: this.round(usd), use: () => this.setState({ amountUsd: usd, amountText: this.round(usd) }),
+      })),
+      minAmount: new Intl.NumberFormat(cur.locale, { style: 'currency', currency: code, maximumFractionDigits: 0 }).format(minLocal),
+      amountTooLow: tooLow, amountOverBalance: overBalance,
+      composeBlocked: tooLow || overBalance,
+      tooLowMessage: 'Below ' + minLocal.toLocaleString() + ' ' + code + ' the network fee costs more than the shares. Raise the amount.',
+      shortfallMessage: 'You need ' + Math.ceil(shortfall).toLocaleString() + ' more ' + code + ' to place this order. Add money or lower the amount.',
+
+      amountLocal: this.fmt(amountUsd, { exact: true }),
+      costLocal: this.fmt(amountUsd * 0.0182, { exact: true }),
+      legs,
+      excluded: [
+        { name: 'Alphabet', why: 'You excluded ads' },
+        { name: 'Meta', why: 'You excluded ads' },
+      ],
+
+      folioName: s.folioName,
+      onFolioName: (e) => this.setState({ folioName: e.target.value.slice(0, 40) }),
+      nameCount: this.pad(s.folioName.length),
+      folioNameOrDefault: s.folioName || 'Untitled folio',
+      isKeep: s.give === 'keep', isSend: s.give === 'send',
+      setKeep: () => this.setState({ give: 'keep' }), setSend: () => this.setState({ give: 'send' }),
+      unlockDate: s.unlock, onUnlock: (e) => this.setState({ unlock: e.target.value }),
+      unlockPhrase: s.unlock ? 'from ' + unlockPretty : 'whenever they like',
+      unlockPretty,
+      commitRows: [
+        { label: 'You pay', value: this.fmt(amountUsd, { exact: true }) },
+        { label: 'You get', value: '0.0632 NVDA · 0.0087 SNDK' },
+        { label: 'Cost to get in', value: '1.82% · ' + this.fmt(amountUsd * 0.0182, { exact: true }) },
+        { label: 'Network fee', value: feeValue },
+      ],
+      buyLabel: (s.give === 'send' ? 'Buy and send · ' : 'Buy · ') + this.fmt(amountUsd, { exact: true }),
+
+      startOneTap: () => {
+        clearTimeout(this.t); clearInterval(this.iv);
+        this.setState({ screen: 'buying', mode: 'onetap' });
+        this.t = setTimeout(() => this.setState({ screen: 'detail' }), 2600);
+      },
+      startSteps: () => this.runSteps(),
+      breakRun: () => { clearInterval(this.iv); this.setState({ mode: 'stopped', step: 3 }); },
+      isOneTap: s.mode === 'onetap', isStepping: s.mode === 'steps', isStopped: s.mode === 'stopped',
+      stepNumber: this.pad(Math.min(s.step + 1, 6)),
+      stepHeadline: stepLabels[Math.min(s.step, 5)][0],
+      steps: stepLabels.map(([label, note], i) => ({
+        n: this.pad(i + 1), label, note,
+        state: i < s.step ? 'Done' : i === s.step ? 'Signing' : 'Waiting',
+        numColor: i < s.step ? '#111111' : i === s.step ? '#1a2fd6' : '#8a8a8a',
+        textColor: i > s.step ? '#8a8a8a' : '#111111',
+      })),
+      nvidiaShares: (0.063227).toFixed(6), unspentLocal: this.fmt(amountUsd / 2, { exact: true }),
+
+      detailSecondary: '≈ $' + amountUsd.toFixed(2) + ' · 2 companies · ' + (cur.tradeable ? 'settled in BR' + 'Z' : 'settled in USDC'),
+      copied: s.copied, copyLabel: s.copied ? 'Link copied' : 'Copy the link',
+      copyLink: () => {
+        this.setState({ copied: true });
+        clearTimeout(this.t);
+        this.t = setTimeout(() => this.setState({ copied: false }), 2000);
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

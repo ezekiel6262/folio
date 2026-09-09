@@ -5,109 +5,12 @@ import { useAccount } from 'wagmi'
 import { useQuery } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
 import { ConnectButton } from '@/components/connect-button'
-import { FolioCard, type FolioSummary } from '@/components/folio-card'
+import { FolioRow, type FolioSummary } from '@/components/folio-card'
 import { WalletBalance } from '@/components/wallet-balance'
+import { AppHeader, HairRule, HardRule, Kicker, Screen, Stop, MonoLabel } from '@/components/ui'
 import { formatLocal, STOCKS } from '@/lib/assets'
 import { IS_DEPLOYED } from '@/lib/deployment'
 
-export default function Home() {
-  const { address, isConnected } = useAccount()
-  const { code, currency, usdToLocal } = useCurrency()
-
-  const { data, isLoading: foliosLoading } = useQuery<{ folios: FolioSummary[] }>({
-    queryKey: ['folios', address],
-    queryFn: async () => (await fetch(`/api/folios?owner=${address}`)).json(),
-    enabled: Boolean(address) && IS_DEPLOYED,
-    refetchInterval: 30_000,
-  })
-
-  const folios = data?.folios ?? []
-
-  return (
-    <div className="pt-2">
-      {!isConnected ? (
-        <section className="pt-6">
-          <h1 className="text-[30px] font-semibold leading-[1.12] tracking-[-0.025em]">
-            Pay in {moneyWord(currency.code)}.
-            <br />
-            Describe the portfolio.
-            <br />
-            <span className="text-accent">Keep it, lock it, or send it.</span>
-          </h1>
-          <p className="mt-4 text-[15px] leading-relaxed text-ink/60">
-            A folio is a named basket of real US stocks, held onchain in your name. Build one in a
-            sentence, fund it in the currency you already use, and hand it to someone if you want to.
-          </p>
-
-          <div className="mt-6">
-            <ConnectButton full />
-            <p className="mt-3 text-center text-xs text-ink/40">
-              Use a passkey, or connect a wallet you already have.
-            </p>
-          </div>
-
-          <MarketPreview />
-
-          <div className="mt-8 space-y-3">
-            <Step n={1} title="Say what you want" body="&ldquo;US tech that builds chips, no ads, for university.&rdquo;" />
-            <Step n={2} title="See it in your money" body={`Every line priced in ${code}, with the fill you will actually get.`} />
-            <Step n={3} title="Keep it or give it" body="Lock it until a date and send it as a claim link." />
-          </div>
-        </section>
-      ) : (
-        <section className="pt-1">
-          <WalletBalance />
-
-          <Link href="/create" className="btn-primary mt-4 w-full">
-            Build a folio
-          </Link>
-
-          {!IS_DEPLOYED && (
-            <p className="mt-3 rounded-xl bg-loss/[0.06] px-4 py-3 text-[13px] leading-relaxed text-loss">
-              The vault contract is not deployed yet, so folios cannot be created. Run the deploy
-              script, then restart the app.
-            </p>
-          )}
-
-          <div className="mt-8">
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-[15px] font-semibold tracking-tight">Your folios</h2>
-              {folios.length > 0 && (
-                <span className="figure text-[13px] text-ink/50">
-                  {formatLocal(usdToLocal(folios.reduce((a, b) => a + b.totalUsd, 0)), code)}
-                </span>
-              )}
-            </div>
-
-            {foliosLoading ? (
-              <div className="space-y-3">
-                <div className="skeleton h-[104px] rounded-2xl" />
-                <div className="skeleton h-[104px] rounded-2xl" />
-              </div>
-            ) : folios.length ? (
-              <div className="space-y-3">
-                {folios.map((f) => (
-                  <FolioCard key={f.id} folio={f} />
-                ))}
-              </div>
-            ) : (
-              <div className="card p-6 text-center">
-                <p className="text-[15px] font-medium">Nothing here yet</p>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-ink/50">
-                  Your first folio takes about thirty seconds. Describe it in your own words.
-                </p>
-              </div>
-            )}
-          </div>
-
-          <MarketPreview />
-        </section>
-      )}
-    </div>
-  )
-}
-
-// The hero names the money the way a person would, not by ISO code.
 const MONEY_WORD: Record<string, string> = {
   BRL: 'reais',
   NGN: 'naira',
@@ -115,50 +18,205 @@ const MONEY_WORD: Record<string, string> = {
   EUR: 'euros',
   USD: 'dollars',
 }
-function moneyWord(code: string) {
-  return MONEY_WORD[code] ?? code
-}
 
-function Step({ n, title, body }: { n: number; title: string; body: string }) {
+export default function Home() {
+  const { isConnected } = useAccount()
   return (
-    <div className="flex gap-3.5">
-      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[11px] font-bold text-accent">
-        {n}
-      </span>
-      <div>
-        <p className="text-[14px] font-semibold">{title}</p>
-        <p className="mt-0.5 text-[13px] leading-relaxed text-ink/55">{body}</p>
-      </div>
-    </div>
+    <>
+      <AppHeader />
+      {isConnected ? <SignedIn /> : <Door />}
+    </>
   )
 }
 
-function MarketPreview() {
-  const { code, usdToLocal, prices, loading } = useCurrency()
-  const featured = ['NVDAc', 'AAPLc', 'MSFTc', 'TSLAc']
+/* ----------------------------------------------------------------- 03 Door */
+
+function Door() {
+  const { code, usdToLocal, prices, loading, staleHours } = useCurrency()
+  const word = MONEY_WORD[code] ?? code
+  const featured = ['AAPLc', 'NVDAc', 'MSFTc', 'TSLAc']
 
   return (
-    <div className="mt-8">
-      <p className="label mb-2.5">Live on Base</p>
-      <div className="grid grid-cols-2 gap-2.5">
-        {featured.map((symbol) => {
-          const s = STOCKS.find((x) => x.symbol === symbol)!
-          const usd = prices[symbol]
-          return (
-            <div key={symbol} className="card px-3.5 py-3">
-              <p className="text-[13px] font-semibold">{s.display}</p>
-              {loading || !usd ? (
-                <div className="skeleton mt-1.5 h-4 w-20 rounded" />
-              ) : (
-                <p className="figure mt-0.5 text-[15px] font-semibold">
-                  {formatLocal(usdToLocal(usd), code, { compact: true })}
-                </p>
-              )}
-              <p className="mt-0.5 text-[11px] text-ink/40">per share</p>
-            </div>
-          )
-        })}
+    <Screen>
+      <Kicker>US shares · your currency</Kicker>
+
+      <h1 className="t-display mt-4">
+        Own Apple.
+        <br />
+        Pay in <span className="t-serif text-[44px]">{word}</span>
+        <Stop />
+      </h1>
+
+      <p className="t-body mt-5">
+        Describe a portfolio in a sentence. Keep it, lock it until a date, or hand it to someone you
+        love.
+      </p>
+
+      <div className="mt-7">
+        <ConnectButton full />
       </div>
+      <p className="t-disclaimer mt-3 text-center">
+        A passkey takes seconds, or use a wallet you already have.
+      </p>
+
+      {/* Reference prices, with their age stated rather than implied. */}
+      <div className="mt-9 border-y border-ink bg-ground-inset px-4 py-4">
+        <div className="flex items-center justify-between">
+          <MonoLabel>Reference prices</MonoLabel>
+          {!loading && staleHours > 0 && (
+            <span className="border border-accent px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-monolabel text-accent">
+              {staleHours}h old
+            </span>
+          )}
+        </div>
+
+        <div className="mt-3">
+          {featured.map((symbol) => {
+            const s = STOCKS.find((x) => x.symbol === symbol)!
+            const usd = prices[symbol]
+            return (
+              <div
+                key={symbol}
+                className="flex items-baseline justify-between border-t border-rule-mid py-2.5 first:border-t-0"
+              >
+                <span className="font-sans text-[13.5px] text-ink">{s.display}</span>
+                {loading || !usd ? (
+                  <span className="h-3 w-16 bg-rule-mid/50" />
+                ) : (
+                  <span className="figure text-[13px] text-ink">
+                    {formatLocal(usdToLocal(usd), code, { compact: true })}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <p className="t-disclaimer mt-3">
+          Chainlink reference feeds on Base. Equity feeds hold the last close while the US market is
+          shut, so this can read hours old. What you pay is set by the live market at the moment you
+          buy, shown before you commit.
+        </p>
+      </div>
+
+      <p className="t-label mt-9">How it works</p>
+      <div className="mt-3">
+        {[
+          'Say what you want, in one sentence.',
+          `See exactly what it buys, and what it costs, in ${word}.`,
+          'Keep it in your name, or send it as a gift.',
+        ].map((text, i) => (
+          <div key={i} className="flex gap-4 border-t border-rule-hair py-3.5 first:border-t-0">
+            <span className="font-mono text-[10px] tracking-monolabel text-accent">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <span className="t-body-sm !text-body">{text}</span>
+          </div>
+        ))}
+      </div>
+
+      <HardRule className="mt-9" />
+      <p className="t-disclaimer mt-4">
+        Folio is an interface and a vault. It is not a broker or an issuer, it does not hold your
+        assets off-chain, and it grants no voting or redemption rights beyond what the token itself
+        carries. Tokenized shares are available only to eligible people outside the United States.
+      </p>
+    </Screen>
+  )
+}
+
+/* ----------------------------------------------------------------- 05 Home */
+
+function SignedIn() {
+  const { address } = useAccount()
+  const { code, usdToLocal } = useCurrency()
+
+  const { data, isLoading } = useQuery<{ folios: FolioSummary[] }>({
+    queryKey: ['folios', address],
+    queryFn: async () => (await fetch(`/api/folios?owner=${address}`)).json(),
+    enabled: Boolean(address) && IS_DEPLOYED,
+    refetchInterval: 30_000,
+  })
+
+  const folios = data?.folios ?? []
+  const total = folios.reduce((a, b) => a + b.totalUsd, 0)
+
+  return (
+    <Screen>
+      <WalletBalance />
+
+      <Link href="/create" className="btn-primary mt-6 no-underline">
+        Build a folio
+      </Link>
+
+      {!IS_DEPLOYED && (
+        <div className="mt-4 border border-accent p-3.5">
+          <p className="t-body-sm">
+            <span className="text-accent">● </span>
+            The vault is not deployed on this environment, so folios cannot be created here.
+          </p>
+        </div>
+      )}
+
+      <div className="mt-10">
+        <div className="flex items-baseline justify-between">
+          <p className="t-label">Your folios</p>
+          <span className="figure text-[11px] text-body-mute">
+            {isLoading ? '··' : String(folios.length).padStart(2, '0')}
+          </span>
+        </div>
+        <HardRule className="mt-2.5" />
+
+        {isLoading ? (
+          <div className="pt-6">
+            <div className="h-4 w-40 bg-ground-inset" />
+            <div className="mt-3 h-4 w-24 bg-ground-inset" />
+          </div>
+        ) : folios.length ? (
+          <>
+            <div>
+              {folios.map((f) => (
+                <FolioRow key={f.id} folio={f} />
+              ))}
+            </div>
+            <div className="flex items-baseline justify-between border-t border-rule-hair pt-3">
+              <MonoLabel>Total</MonoLabel>
+              <span className="figure text-[13px] text-ink">{formatLocal(usdToLocal(total), code)}</span>
+            </div>
+          </>
+        ) : (
+          <EmptyState />
+        )}
+      </div>
+    </Screen>
+  )
+}
+
+/** The empty state carries a drawn passbook — no images ship with this design. */
+function EmptyState() {
+  return (
+    <div className="pt-10">
+      <svg width="104" height="130" viewBox="0 0 104 130" fill="none" aria-hidden="true">
+        <rect x="0.5" y="0.5" width="103" height="129" stroke="#d8d8d8" />
+        <rect x="0" y="0" width="6" height="130" fill="#1a2fd6" />
+        {[36, 58, 80, 102].map((y) => (
+          <line key={y} x1="22" y1={y} x2="84" y2={y} stroke="#b5b2b2" />
+        ))}
+      </svg>
+
+      <h2 className="t-section mt-7">
+        Nothing here yet
+        <Stop />
+      </h2>
+      <p className="t-body mt-4">
+        A folio is a named basket of real US shares, held in your name. You describe it in a
+        sentence and it takes about thirty seconds to make.
+      </p>
+      <p className="t-body-sm mt-3">
+        Whatever you build stays yours. You can lock it until a date, or hand the whole thing to
+        someone else with a link.
+      </p>
+      <HairRule className="mt-8" />
     </div>
   )
 }

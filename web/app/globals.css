@@ -8,46 +8,154 @@
 
 html,
 body {
-  background: theme('colors.paper.DEFAULT');
+  margin: 0;
+  background: theme('colors.ground.inset');
   color: theme('colors.ink.DEFAULT');
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Local-currency figures are the headline of this product, so they get real typographic
-   weight and tabular alignment. */
+/* Every figure is mono with tabular numerals, so columns of money line up and a
+   changing price does not make the layout twitch. */
 .figure {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-feature-settings: 'tnum';
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+}
+
+a {
+  color: theme('colors.accent.DEFAULT');
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+a:hover {
+  color: theme('colors.ink.DEFAULT');
+}
+
+/* Focus is never removed. 1px accent at 3px offset, everywhere. */
+input:focus,
+textarea:focus,
+select:focus,
+button:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible {
+  outline: 1px solid theme('colors.accent.DEFAULT');
+  outline-offset: 3px;
+}
+
+::selection {
+  background: theme('colors.accent.DEFAULT');
+  color: theme('colors.ground.DEFAULT');
+}
+::placeholder {
+  color: theme('colors.body.mute');
 }
 
 @layer components {
-  .card {
-    @apply rounded-2xl border border-black/[0.07] bg-paper-card shadow-[0_1px_2px_rgba(11,15,20,0.04),0_8px_24px_-16px_rgba(11,15,20,0.18)];
+  /* ---- type roles, straight from the handoff ---- */
+  .t-display {
+    @apply font-sans text-[40px] font-bold uppercase leading-[0.98] tracking-display;
   }
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40;
+  .t-screen {
+    @apply font-sans text-[30px] font-bold uppercase leading-[1.02] tracking-screen;
   }
+  .t-section {
+    @apply font-sans text-[26px] font-bold uppercase leading-[1.02] tracking-screen;
+  }
+  /* Exactly one word per headline may take this. Never more. */
+  .t-serif {
+    @apply font-serif italic normal-case tracking-[-0.01em];
+  }
+  .t-quote {
+    @apply font-serif text-[25px] font-normal leading-[1.22];
+  }
+  .t-reassure {
+    @apply font-serif text-[18px] font-normal leading-[1.4];
+  }
+  .t-cardtitle {
+    @apply font-sans text-[13px] font-bold uppercase tracking-title;
+  }
+  .t-label {
+    @apply font-sans text-[12px] font-bold uppercase tracking-label;
+  }
+  .t-kicker {
+    @apply font-mono text-[10px] uppercase tracking-kicker text-accent;
+  }
+  .t-mono-label {
+    @apply font-mono text-[10px] uppercase tracking-monolabel text-body-mute;
+  }
+  .t-body {
+    @apply font-sans text-[14px] leading-[1.6] text-body;
+  }
+  .t-body-sm {
+    @apply font-sans text-[12.5px] leading-[1.55] text-body-soft;
+  }
+  .t-disclaimer {
+    @apply font-sans text-[11px] leading-[1.6] text-body-mute;
+  }
+  .t-figure-lg {
+    @apply figure text-[44px] font-medium leading-none tracking-figure;
+  }
+  .t-figure-md {
+    @apply figure text-[24px] font-medium tracking-[-0.02em];
+  }
+  .t-figure-sm {
+    @apply figure text-[12.5px];
+  }
+
+  /* ---- structure: rules, never fills ---- */
+  .rule-hair {
+    @apply border-rule-hair;
+  }
+  .rule-hard {
+    @apply border-ink;
+  }
+
+  /* ---- controls ---- */
   .btn-primary {
-    @apply btn bg-accent text-white hover:bg-[#0047DB] active:scale-[0.99];
+    @apply flex min-h-[52px] w-full items-center justify-center border border-ink bg-ink px-5
+           font-sans text-[12px] font-bold uppercase tracking-button text-ground transition-colors
+           hover:border-accent hover:bg-accent
+           disabled:cursor-not-allowed disabled:border-rule-hair disabled:bg-rule-hair disabled:text-body-mute;
+  }
+  .btn-secondary {
+    @apply flex min-h-[46px] w-full items-center justify-center border border-ink bg-transparent px-5
+           font-sans text-[11.5px] font-bold uppercase tracking-button text-ink transition-colors
+           hover:border-accent hover:text-accent
+           disabled:cursor-not-allowed disabled:border-rule-hair disabled:text-body-mute;
   }
   .btn-ghost {
-    @apply btn border border-black/10 bg-white text-ink hover:bg-black/[0.03];
+    @apply font-sans text-[11.5px] font-bold uppercase tracking-button text-body-soft underline
+           underline-offset-4 transition-colors hover:text-accent;
   }
-  .label {
-    @apply text-[11px] font-semibold uppercase tracking-[0.09em] text-ink/45;
+  /* On the void ground the accent is illegible, so outlined white is the only button. */
+  .btn-on-void {
+    @apply flex min-h-[46px] items-center justify-center border border-white bg-transparent px-6
+           font-sans text-[11.5px] font-bold uppercase tracking-button text-white transition-colors
+           hover:border-accent-dark hover:text-accent-dark;
   }
-  .pill {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+
+  .field {
+    @apply w-full border border-ink bg-white px-4 py-3 font-sans text-[14px] text-ink outline-none;
+  }
+
+  /* A list row that shifts right on hover, revealing the inset ground behind it. */
+  .row-hover {
+    @apply -mx-2 px-2 transition-[padding-left,background-color] duration-[260ms]
+           ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:bg-ground-inset hover:pl-[12px];
   }
 }
 
-input[type='text'],
-input[type='number'],
-textarea {
-  @apply w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-ink outline-none transition placeholder:text-ink/30 focus:border-accent/60 focus:ring-4 focus:ring-accent/10;
+/* Oversized decorative letterforms on the void ground. Never selectable, never read. */
+.ghost-letter {
+  color: theme('colors.ghost');
+  user-select: none;
+  pointer-events: none;
+  font-family: var(--font-instrument), Georgia, serif;
+  font-style: italic;
+  line-height: 0.8;
 }
 
-/* Hide the number-input spinners; the amount field is a currency field, not a stepper. */
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -57,18 +165,12 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
-}
-.skeleton {
-  @apply relative overflow-hidden bg-black/[0.05];
-}
-.skeleton::after {
-  @apply absolute inset-0;
-  content: '';
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
-  transform: translateX(-100%);
-  animation: shimmer 1.6s infinite;
 }

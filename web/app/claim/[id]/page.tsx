@@ -3,19 +3,21 @@
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { useExecutor, isUserRejection } from '@/lib/use-executor'
 import { useQuery } from '@tanstack/react-query'
 import type { Hex } from 'viem'
+import { useExecutor, isUserRejection } from '@/lib/use-executor'
 import { useCurrency } from '@/components/currency-context'
 import { ConnectButton } from '@/components/connect-button'
-import { formatLocal, formatShares } from '@/lib/assets'
+import { Kicker, MonoLabel, Spinner } from '@/components/ui'
+import { formatLocal, formatShares, formatUsd } from '@/lib/assets'
 import { claimCall } from '@/lib/vault'
 import { VAULT_ADDRESS } from '@/lib/deployment'
 import type { FolioView } from '@/lib/folio-reader'
 
 /**
- * The gift card. A recipient lands here from a link and should understand what they have
- * been given before they know or care what a wallet is.
+ * Screen 11. A recipient lands here from a link, possibly having never used a wallet.
+ * They should understand what they have been given before being asked to sign anything,
+ * so the certificate comes first and the wallet question comes last.
  */
 export default function ClaimPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -50,95 +52,132 @@ export default function ClaimPage({ params }: { params: Promise<{ id: string }> 
       setTimeout(async () => {
         await refetch()
         router.push(`/folio/${folio.id}`)
-      }, 3500)
+      }, 3000)
     } catch (e) {
-      const m = (e as Error).message
-      setError(isUserRejection(e) ? 'You cancelled the confirmation.' : m)
+      setError(isUserRejection(e) ? 'You cancelled the confirmation. The gift is still waiting.' : (e as Error).message)
       setClaiming(false)
     }
   }
 
   if (!folio) {
     return (
-      <div className="pt-16 text-center">
-        <div className="skeleton mx-auto h-40 w-full rounded-2xl" />
+      <div className="flex min-h-screen items-center justify-center bg-ground-inset">
+        <Spinner />
       </div>
     )
   }
 
   const stocks = folio.holdings.filter((h) => h.isStock)
   const alreadyClaimed = !folio.escrowed
+  const unlockDate = folio.unlockAt
+    ? new Date(folio.unlockAt * 1000)
+        .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        .toUpperCase()
+    : null
 
   return (
-    <div className="pt-6">
-      <div className="card overflow-hidden">
-        <div className="bg-ink px-6 py-7 text-white">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/50">
-            {alreadyClaimed ? 'Already claimed' : 'A gift for you'}
-          </p>
-          <h1 className="mt-2 text-[26px] font-semibold leading-tight tracking-tight">{folio.name}</h1>
-          <p className="figure mt-3 text-[30px] font-semibold leading-none">
-            {formatLocal(usdToLocal(folio.totalUsd), code)}
-          </p>
-          <p className="mt-2 text-[13px] text-white/55">
-            {stocks.map((s) => s.display).join(' and ')}
-          </p>
-        </div>
+    <div className="min-h-screen bg-ground-inset px-4 py-8">
+      <div className="animate-rise mx-auto max-w-[398px]">
+        {/* The certificate. A 6px accent bar bleeds across the top of the plate. */}
+        <div className="border-2 border-ink bg-ground">
+          <div className="h-1.5 bg-accent" />
 
-        <div className="divide-y divide-black/[0.05]">
-          {stocks.map((h) => (
-            <div key={h.address} className="flex items-center justify-between px-5 py-3">
-              <span className="text-[14px] font-medium">{h.display}</span>
-              <span className="figure text-[13.5px] text-ink/70">{formatShares(h.shares)} shares</span>
+          <div className="px-5 pb-6 pt-5">
+            <Kicker>{alreadyClaimed ? 'Already claimed' : 'Set aside for you'}</Kicker>
+
+            <p className="t-mono-label mt-4">
+              From {folio.creator.slice(0, 6)}…{folio.creator.slice(-4)}
+            </p>
+            <h1 className="mt-1.5 font-sans text-[34px] font-bold uppercase leading-[1.0] tracking-screen">
+              {folio.name}
+            </h1>
+
+            <hr className="my-5 border-0 border-t-2 border-ink" />
+
+            <MonoLabel>Worth today</MonoLabel>
+            <p className="figure mt-2 text-[46px] font-medium leading-none tracking-figure">
+              {formatLocal(usdToLocal(folio.totalUsd), code)}
+            </p>
+            <p className="figure mt-2 text-[11px] text-body-mute">
+              {formatUsd(folio.totalUsd)} · {stocks.length}{' '}
+              {stocks.length === 1 ? 'company' : 'companies'}
+            </p>
+
+            <div className="mt-6">
+              {stocks.map((h) => (
+                <div
+                  key={h.address}
+                  className="flex items-baseline justify-between gap-4 border-t border-rule-hair py-3"
+                >
+                  <span className="t-cardtitle">{h.display}</span>
+                  <span className="figure text-[12px] text-body-soft">
+                    {formatShares(h.shares)} sh
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* The reassurance that matters most sits on the void ground. */}
+          <div className="bg-ink-void px-5 py-4">
+            <p className="font-sans text-[13px] leading-[1.6] text-body-dark">
+              <span className="text-accent-dark">It is already yours.</span>{' '}
+              {unlockDate
+                ? `You can watch it from today. The shares can be taken out from ${unlockDate}.`
+                : 'Claim it and the shares move into your name straight away.'}
+            </p>
+          </div>
+
+          <div className="px-5 pb-6 pt-5">
+            <p className="t-reassure text-body">
+              These are real shares in real companies, bought in your name and held in a vault only
+              you can open. Not points, not a voucher.
+            </p>
+          </div>
         </div>
 
-        {folio.locked && (
-          <div className="border-t border-black/[0.06] bg-accent-soft/50 px-5 py-3.5">
-            <p className="text-[13px] leading-relaxed text-ink/70">
-              This is yours from the moment you claim it, but it unlocks on{' '}
-              <span className="font-semibold text-ink">
-                {new Date(folio.unlockAt * 1000).toLocaleDateString('en-GB', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
-              </span>
-              . Until then you can watch it, but not sell it.
+        {error && (
+          <div className="mt-4 border border-accent bg-ground p-3.5">
+            <p className="t-body-sm">
+              <span className="text-accent">● </span>
+              {error}
             </p>
           </div>
         )}
-      </div>
 
-      {error && <p className="mt-3 rounded-xl bg-loss/[0.06] px-4 py-3 text-[13px] text-loss">{error}</p>}
+        <div className="mt-5">
+          {alreadyClaimed ? (
+            <p className="t-body-sm text-center">This folio has already been claimed.</p>
+          ) : !secret ? (
+            <div className="border border-accent bg-ground p-3.5">
+              <p className="t-body-sm">
+                <span className="text-accent">● </span>
+                This link is missing its key, so it cannot be claimed. Ask whoever sent it for the
+                full link.
+              </p>
+            </div>
+          ) : !isConnected ? (
+            <>
+              <ConnectButton full label="Make it mine" />
+              <p className="t-disclaimer mt-3 text-center">
+                Takes about a minute. A passkey is enough — no app, no seed phrase.
+              </p>
+            </>
+          ) : (
+            <>
+              <button onClick={claim} disabled={claiming} className="btn-primary !min-h-[54px]">
+                {claiming ? 'Claiming…' : 'Make it mine'}
+              </button>
+              <p className="t-disclaimer mt-3 text-center">
+                It moves into {address?.slice(0, 6)}…{address?.slice(-4)}
+              </p>
+            </>
+          )}
+        </div>
 
-      <div className="mt-5">
-        {alreadyClaimed ? (
-          <p className="text-center text-[13.5px] text-ink/50">
-            This folio has already been claimed.
-          </p>
-        ) : !secret ? (
-          <p className="rounded-xl bg-loss/[0.06] px-4 py-3 text-center text-[13px] leading-relaxed text-loss">
-            This link is missing its claim key. Ask the sender for the full link.
-          </p>
-        ) : !isConnected ? (
-          <>
-            <ConnectButton full />
-            <p className="mt-3 text-center text-[12.5px] text-ink/45">
-              Sign in to accept it — a passkey takes seconds, or use a wallet you already have.
-            </p>
-          </>
-        ) : (
-          <>
-            <button onClick={claim} disabled={claiming} className="btn-primary w-full">
-              {claiming ? 'Claiming…' : 'Claim this folio'}
-            </button>
-            <p className="mt-3 text-center text-[12.5px] text-ink/45">
-              It will move into your wallet at {address?.slice(0, 6)}…{address?.slice(-4)}
-            </p>
-          </>
-        )}
+        <p className="t-disclaimer mt-8 text-center">
+          Folio is an interface and a vault. It is not a broker or an issuer.
+        </p>
       </div>
     </div>
   )

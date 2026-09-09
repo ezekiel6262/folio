@@ -4,16 +4,18 @@ import { use, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { useExecutor, isUserRejection } from '@/lib/use-executor'
 import { useQuery } from '@tanstack/react-query'
+import { useExecutor, isUserRejection } from '@/lib/use-executor'
 import { useCurrency } from '@/components/currency-context'
 import { ShareLink } from '@/components/share-link'
 import { unlockText } from '@/components/folio-card'
+import { AppHeader, HardRule, Kicker, MonoLabel, Screen, Spinner, StatusChip, Stop } from '@/components/ui'
 import { formatLocal, formatShares, formatUsd } from '@/lib/assets'
 import { withdrawAllCall } from '@/lib/vault'
 import { VAULT_ADDRESS } from '@/lib/deployment'
 import type { FolioView } from '@/lib/folio-reader'
 
+/** Screen 10. A folio you own, or one you have sent and not yet had claimed. */
 export default function FolioPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const search = useSearchParams()
@@ -43,8 +45,7 @@ export default function FolioPage({ params }: { params: Promise<{ id: string }> 
       await execute([withdrawAllCall(BigInt(folio.id), address, VAULT_ADDRESS)])
       setTimeout(() => refetch(), 3000)
     } catch (e) {
-      const m = (e as Error).message
-      setError(isUserRejection(e) ? 'You cancelled the confirmation.' : m)
+      setError(isUserRejection(e) ? 'You cancelled the confirmation.' : (e as Error).message)
     } finally {
       setWithdrawing(false)
     }
@@ -52,114 +53,142 @@ export default function FolioPage({ params }: { params: Promise<{ id: string }> 
 
   if (isLoading) {
     return (
-      <div className="space-y-3 pt-4">
-        <div className="skeleton h-28 rounded-2xl" />
-        <div className="skeleton h-48 rounded-2xl" />
-      </div>
+      <>
+        <AppHeader />
+        <Screen>
+          <div className="flex min-h-[50vh] items-center justify-center">
+            <Spinner />
+          </div>
+        </Screen>
+      </>
     )
   }
 
   if (!folio) {
     return (
-      <div className="pt-10 text-center">
-        <p className="text-[16px] font-semibold">Folio not found</p>
-        <p className="mt-1.5 text-[13px] text-ink/50">{data?.error ?? 'It may not exist yet.'}</p>
-        <Link href="/" className="btn-ghost mt-5">
-          Back home
-        </Link>
-      </div>
+      <>
+        <AppHeader />
+        <Screen>
+          <Kicker>Not found</Kicker>
+          <h1 className="t-screen mt-4">
+            No folio here
+            <Stop />
+          </h1>
+          <p className="t-body mt-5">{data?.error ?? 'It may not exist yet.'}</p>
+          <Link href="/" className="btn-secondary mt-7 no-underline">
+            Back
+          </Link>
+        </Screen>
+      </>
     )
   }
 
   const stocks = folio.holdings.filter((h) => h.isStock)
+  const created = new Date(folio.createdAt * 1000)
+    .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    .toUpperCase()
 
   return (
-    <div className="pt-2">
-      {justCreated && (
-        <div className="mb-4 rounded-xl bg-gain/[0.08] px-4 py-3 text-[13px] font-medium text-gain">
-          Done. You own {stocks.map((s) => s.display).join(' and ')}.
-        </div>
-      )}
+    <>
+      <AppHeader />
+      <Screen>
+        {justCreated && (
+          <div className="-mx-5 mb-7 bg-ink-void px-5 py-4">
+            <p className="font-sans text-[13px] leading-[1.55] text-body-dark">
+              <span className="text-accent-dark">Done.</span> You own{' '}
+              {stocks.map((s) => s.display).join(' and ')}, in your own name.
+            </p>
+          </div>
+        )}
 
-      {claimSecret && <ShareLink folioId={folio.id} secret={claimSecret} name={folio.name} />}
+        {claimSecret && (
+          <div className="mb-7">
+            <ShareLink folioId={folio.id} secret={claimSecret} name={folio.name} />
+          </div>
+        )}
 
-      <div className="card p-5">
-        <p className="label">{folio.name}</p>
-        <p className="figure mt-1 text-[34px] font-semibold leading-none">
+        <Kicker>{folio.escrowed ? 'Sent · not yet claimed' : 'Yours'}</Kicker>
+
+        <h1 className="mt-3 font-sans text-[32px] font-bold uppercase leading-[1.02] tracking-screen">
+          {folio.name}
+        </h1>
+
+        <p className="figure mt-5 text-[40px] font-medium leading-none tracking-figure">
           {formatLocal(usdToLocal(folio.totalUsd), code)}
         </p>
-        <p className="mt-1.5 text-[13px] text-ink/45">{formatUsd(folio.totalUsd)}</p>
+        <p className="figure mt-2 text-[11px] text-body-mute">
+          {formatUsd(folio.totalUsd)} · {stocks.length} {stocks.length === 1 ? 'company' : 'companies'} ·
+          made {created}
+        </p>
 
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {folio.locked && (
-            <span className="pill bg-accent-soft text-accent">{unlockText(folio.unlockAt)}</span>
-          )}
-          {folio.escrowed && <span className="pill bg-black/[0.06] text-ink/60">Waiting to be claimed</span>}
-          {!folio.locked && !folio.escrowed && (
-            <span className="pill bg-gain/10 text-gain">Unlocked</span>
-          )}
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {folio.escrowed && <StatusChip tone="solid">Waiting to be claimed</StatusChip>}
+          {folio.locked && <StatusChip>{unlockText(folio.unlockAt)}</StatusChip>}
+          {!folio.locked && !folio.escrowed && <StatusChip tone="mute">No lock</StatusChip>}
         </div>
-      </div>
 
-      <div className="card mt-4 overflow-hidden">
-        <p className="label px-5 pb-1 pt-4">Holdings</p>
-        <div className="divide-y divide-black/[0.05]">
+        <HardRule className="mt-7" />
+
+        <p className="t-label mt-5">What is inside</p>
+        <div className="mt-3">
           {folio.holdings.map((h) => (
-            <div key={h.address} className="flex items-center justify-between gap-3 px-5 py-3.5">
-              <div className="min-w-0">
-                <p className="text-[14.5px] font-semibold">{h.display}</p>
-                <p className="mt-0.5 text-[12.5px] text-ink/50">
-                  {h.isStock ? (
-                    <>
-                      <span className="figure">{formatShares(h.shares)}</span> shares ·{' '}
-                      {formatLocal(usdToLocal(h.priceUsd), code, { compact: true })} each
-                    </>
-                  ) : (
-                    <>cash sleeve</>
-                  )}
-                </p>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="figure text-[14.5px] font-semibold">
+            <div key={h.address} className="border-b border-rule-hair py-3.5">
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="t-cardtitle">{h.display}</span>
+                <span className="figure text-[13.5px] text-ink">
                   {formatLocal(usdToLocal(h.valueUsd), code, { compact: true })}
-                </p>
-                <p className="text-[12px] text-ink/45">{h.weightPct.toFixed(0)}%</p>
+                </span>
+              </div>
+              <div className="mt-1 flex items-baseline justify-between gap-4">
+                <span className="figure text-[10.5px] text-body-mute">
+                  {h.isStock ? `${formatShares(h.shares)} sh · ${formatUsd(h.priceUsd)} each` : 'cash sleeve'}
+                </span>
+                <span className="figure text-[10px] text-body-mute">{h.weightPct.toFixed(0)}%</span>
               </div>
             </div>
           ))}
         </div>
-        <p className="border-t border-black/[0.06] px-5 py-3 text-[11.5px] leading-relaxed text-ink/40">
-          Share counts apply the current B20 multiplier, so reinvested dividends and splits are
-          already reflected in what you see.
+
+        <p className="t-disclaimer mt-4">
+          Share counts are share-equivalents, adjusted for dividends and splits. The shares sit in a
+          vault in your name — Folio cannot move them, only the owner address can.
         </p>
-      </div>
 
-      {error && (
-        <p className="mt-3 rounded-xl bg-loss/[0.06] px-4 py-3 text-[13px] text-loss">{error}</p>
-      )}
+        {error && (
+          <div className="mt-5 border border-accent p-3.5">
+            <p className="t-body-sm">
+              <span className="text-accent">● </span>
+              {error}
+            </p>
+          </div>
+        )}
 
-      {isOwner && (
-        <div className="mt-4 space-y-2">
-          {folio.locked ? (
-            <button disabled className="btn-ghost w-full">
-              Locked until{' '}
-              {new Date(folio.unlockAt * 1000).toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </button>
-          ) : (
-            <button onClick={withdraw} disabled={withdrawing} className="btn-ghost w-full">
-              {withdrawing ? 'Confirming…' : 'Withdraw everything to my wallet'}
-            </button>
-          )}
-        </div>
-      )}
+        {isOwner && (
+          <div className="mt-7">
+            {folio.locked ? (
+              <>
+                <div className="-mx-5 bg-ink-void px-5 py-4">
+                  <p className="font-sans text-[13px] leading-[1.55] text-body-dark">
+                    <span className="text-accent-dark">Locked</span> until{' '}
+                    {new Date(folio.unlockAt * 1000)
+                      .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                      .toUpperCase()}
+                    . It is already yours and already invested — the lock only holds the taking out.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <button onClick={withdraw} disabled={withdrawing} className="btn-secondary">
+                {withdrawing ? 'Confirming…' : 'Take the shares out'}
+              </button>
+            )}
+          </div>
+        )}
 
-      <Link href="/" className="mt-6 block text-center text-[13px] text-ink/45">
-        Back
-      </Link>
-    </div>
+        <Link href="/" className="btn-ghost mt-8 block text-center no-underline">
+          Back
+        </Link>
+      </Screen>
+    </>
   )
 }

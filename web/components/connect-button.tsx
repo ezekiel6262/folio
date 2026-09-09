@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useAccount, useConnect, useConnectors, useDisconnect, type Connector } from 'wagmi'
+import { useSponsorship } from '@/lib/use-executor'
 
 export function shortAddress(address?: string) {
   if (!address) return ''
@@ -10,21 +11,21 @@ export function shortAddress(address?: string) {
 
 const SMART_WALLET_IDS = new Set(['coinbaseWalletSDK', 'baseAccount'])
 
-/**
- * Only the Coinbase Smart Wallet can batch, so it is presented first and labelled for
- * what it actually gives you. Every other wallet still works - it just signs each step.
- */
-function describe(connector: Connector) {
+function describe(connector: Connector, feeCovered: boolean) {
   if (SMART_WALLET_IDS.has(connector.id)) {
-    return { title: 'Coinbase Smart Wallet', subtitle: 'Passkey · one tap · no seed phrase', best: true }
+    return {
+      title: 'Coinbase Smart Wallet',
+      note: feeCovered ? 'Passkey · one signature · fee covered' : 'Passkey · one signature',
+      best: true,
+    }
   }
   if (connector.id === 'walletConnect') {
-    return { title: 'WalletConnect', subtitle: 'Scan with any mobile wallet', best: false }
+    return { title: 'WalletConnect', note: 'Scan with a mobile wallet · signs every step', best: false }
   }
   if (connector.id === 'injected') {
-    return { title: 'Browser wallet', subtitle: 'Whatever is installed here', best: false }
+    return { title: 'Browser wallet', note: 'Whatever is installed here · signs every step', best: false }
   }
-  return { title: connector.name, subtitle: 'Signs each step separately', best: false }
+  return { title: connector.name, note: 'Signs every step separately', best: false }
 }
 
 function useOfferedConnectors() {
@@ -32,20 +33,17 @@ function useOfferedConnectors() {
   return useMemo(() => {
     const list = [...connectors]
     // wagmi discovers installed wallets over EIP-6963 and also keeps the generic
-    // injected shim. Showing both would list the same wallet twice.
+    // injected shim; showing both would list the same wallet twice.
     const hasDiscovered = list.some((c) => c.id !== 'injected' && c.type === 'injected')
     const filtered = hasDiscovered ? list.filter((c) => c.id !== 'injected') : list
-
-    return filtered.sort((a, b) => {
-      const aBest = SMART_WALLET_IDS.has(a.id) ? 0 : 1
-      const bBest = SMART_WALLET_IDS.has(b.id) ? 0 : 1
-      return aBest - bBest
-    })
+    return filtered.sort(
+      (a, b) => (SMART_WALLET_IDS.has(a.id) ? 0 : 1) - (SMART_WALLET_IDS.has(b.id) ? 0 : 1),
+    )
   }, [connectors])
 }
 
-export function ConnectButton({ full = false }: { full?: boolean }) {
-  const { address, isConnected, connector: active } = useAccount()
+export function ConnectButton({ full = false, label = 'Sign in' }: { full?: boolean; label?: string }) {
+  const { address, isConnected } = useAccount()
   const { disconnect } = useDisconnect()
   const [open, setOpen] = useState(false)
 
@@ -53,10 +51,9 @@ export function ConnectButton({ full = false }: { full?: boolean }) {
     return (
       <button
         onClick={() => disconnect()}
-        className={`btn-ghost ${full ? 'w-full' : '!px-3 !py-2 text-xs'}`}
-        title={`Signed in with ${active?.name ?? 'a wallet'} — click to sign out`}
+        className="border border-ink px-2.5 py-[5px] font-mono text-[10px] uppercase tracking-monolabel text-ink transition-colors hover:border-accent hover:text-accent"
+        title="Sign out"
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-gain" />
         {shortAddress(address)}
       </button>
     )
@@ -66,19 +63,27 @@ export function ConnectButton({ full = false }: { full?: boolean }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className={full ? 'btn-primary w-full' : 'btn-primary !px-3.5 !py-2 text-xs'}
+        className={
+          full
+            ? 'btn-primary'
+            : 'border border-ink px-2.5 py-[5px] font-mono text-[10px] uppercase tracking-monolabel text-ink transition-colors hover:border-accent hover:text-accent'
+        }
       >
-        {full ? 'Sign in' : 'Sign in'}
+        {label}
       </button>
       {open && <WalletSheet onClose={() => setOpen(false)} />}
     </>
   )
 }
 
+/* ------------------------------------------------------- 04 Wallet picker */
+
 function WalletSheet({ onClose }: { onClose: () => void }) {
   const offered = useOfferedConnectors()
   const { connect, isPending, error, variables } = useConnect()
   const { isConnected } = useAccount()
+  const sponsorship = useSponsorship()
+  const feeCovered = sponsorship.appHasPaymaster
 
   useEffect(() => {
     if (isConnected) onClose()
@@ -90,9 +95,13 @@ function WalletSheet({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  const best = offered.filter((c) => SMART_WALLET_IDS.has(c.id))
+  const rest = offered.filter((c) => !SMART_WALLET_IDS.has(c.id))
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: 'rgba(8,8,8,0.62)' }}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -100,96 +109,106 @@ function WalletSheet({ onClose }: { onClose: () => void }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[440px] rounded-t-2xl bg-paper-card p-5 shadow-2xl sm:rounded-2xl"
+        className="animate-sheet w-full max-w-[430px] border-t-2 border-ink bg-ground px-5 pb-8 pt-5"
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[17px] font-semibold tracking-tight">Sign in</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 text-ink/40 hover:bg-black/[0.05]" aria-label="Close">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="t-kicker">How you sign</p>
+            <h2 className="t-section mt-2">Pick a wallet</h2>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="-mr-2 -mt-1 flex h-11 w-11 items-center justify-center font-mono text-[15px] text-body-mute hover:text-ink"
+          >
+            ✕
           </button>
         </div>
 
-        <div className="space-y-2">
-          {offered.map((connector) => {
-            const { title, subtitle, best } = describe(connector)
-            const busy = isPending && variables?.connector === connector
-            return (
-              <button
-                key={connector.uid}
-                onClick={() => connect({ connector })}
-                disabled={isPending}
-                className={`flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition disabled:opacity-50 ${
-                  best ? 'border-accent/40 bg-accent-soft/40 hover:border-accent' : 'border-black/10 hover:bg-black/[0.02]'
-                }`}
-              >
-                <WalletIcon connector={connector} />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-[14.5px] font-semibold">{title}</span>
-                    {best && <span className="pill bg-accent text-[10px] text-white">Fastest</span>}
+        {best.map((connector) => {
+          const d = describe(connector, feeCovered)
+          const busy = isPending && variables?.connector === connector
+          return (
+            <button
+              key={connector.uid}
+              onClick={() => connect({ connector })}
+              disabled={isPending}
+              className="mt-5 flex w-full items-center gap-3 border border-accent bg-ground-inset p-4 text-left transition-opacity disabled:opacity-50"
+            >
+              <WalletTile connector={connector} />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span className="t-cardtitle">{d.title}</span>
+                  <span className="bg-accent px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-monolabel text-white">
+                    Best
                   </span>
-                  <span className="mt-0.5 block truncate text-[12.5px] text-ink/50">{subtitle}</span>
                 </span>
-                {busy && (
-                  <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-black/10 border-t-accent" />
-                )}
-              </button>
-            )
-          })}
-        </div>
+                <span className="mt-1 block font-mono text-[10px] uppercase tracking-monolabel text-body-mute">
+                  {d.note}
+                </span>
+              </span>
+              <span className="font-mono text-[13px] text-accent">{busy ? '…' : '↗'}</span>
+            </button>
+          )
+        })}
+
+        {rest.length > 0 && (
+          <>
+            <p className="t-mono-label mt-7">Wallets on this device</p>
+            <div className="mt-2 border-t border-rule-hair">
+              {rest.map((connector) => {
+                const d = describe(connector, feeCovered)
+                const busy = isPending && variables?.connector === connector
+                return (
+                  <button
+                    key={connector.uid}
+                    onClick={() => connect({ connector })}
+                    disabled={isPending}
+                    className="row-hover flex w-full items-center gap-3 border-b border-rule-hair py-3.5 text-left disabled:opacity-50"
+                  >
+                    <WalletTile connector={connector} />
+                    <span className="min-w-0 flex-1">
+                      <span className="t-cardtitle block truncate">{d.title}</span>
+                      <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-monolabel text-body-mute">
+                        {d.note}
+                      </span>
+                    </span>
+                    <span className="font-mono text-[13px] text-accent">{busy ? '…' : '↗'}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
 
         {error && (
-          <p className="mt-3 rounded-xl bg-loss/[0.06] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-loss">
-            {/rejected|denied/i.test(error.message) ? 'You closed the wallet before signing in.' : error.message}
+          <p className="mt-4 border border-accent p-3 font-sans text-[12.5px] leading-[1.55] text-body">
+            <span className="text-accent">● </span>
+            {/rejected|denied/i.test(error.message)
+              ? 'You closed the wallet before signing in. Nothing has been charged.'
+              : error.message}
           </p>
         )}
 
-        <p className="mt-4 text-[12px] leading-relaxed text-ink/40">
-          With a Coinbase Smart Wallet the whole purchase is one confirmation. Other wallets sign
-          each step — same result, more taps.
+        <p className="t-disclaimer mt-6">
+          A smart wallet does the whole purchase in one signature
+          {feeCovered ? ', and we cover the network fee on it' : ''}. Every other wallet signs each
+          step separately — the same result, more taps
+          {feeCovered ? ', and the fee is not covered' : ''}.
         </p>
       </div>
     </div>
   )
 }
 
-function WalletIcon({ connector }: { connector: Connector }) {
-  // Wallets discovered over EIP-6963 supply their own icon; the configured connectors
-  // do not, so the two we always show get drawn rather than reduced to a letter.
+function WalletTile({ connector }: { connector: Connector }) {
   if (connector.icon) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={connector.icon} alt="" className="h-9 w-9 shrink-0 rounded-lg" />
+    return <img src={connector.icon} alt="" className="h-[26px] w-[26px] shrink-0 border border-rule-hair" />
   }
-
-  if (SMART_WALLET_IDS.has(connector.id)) {
-    return (
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" fill="white" />
-          <rect x="8.5" y="8.5" width="7" height="7" rx="1.6" fill="#0052FF" />
-        </svg>
-      </span>
-    )
-  }
-
-  if (connector.id === 'walletConnect') {
-    return (
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#3B99FC]">
-        <svg width="20" height="14" viewBox="0 0 24 15" fill="none" aria-hidden="true">
-          <path
-            d="M5 4.6a9.9 9.9 0 0 1 14 0l.5.5a.7.7 0 0 1 0 1l-1.6 1.6a.35.35 0 0 1-.5 0l-.7-.7a6.9 6.9 0 0 0-9.8 0l-.7.8a.35.35 0 0 1-.5 0L4.1 6.1a.7.7 0 0 1 0-1z"
-            fill="white"
-          />
-        </svg>
-      </span>
-    )
-  }
-
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink-soft text-[14px] font-bold text-white">
-      {connector.name.slice(0, 1)}
+    <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center border border-ink font-mono text-[11px] text-ink">
+      {connector.name.slice(0, 1).toUpperCase()}
     </span>
   )
 }
