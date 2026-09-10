@@ -55,15 +55,21 @@ export function settlementCurrency(code: string): Currency {
   return c.tradeable ? c : currency(c.settlesVia ?? 'USD')
 }
 
-export function formatLocal(amount: number, code: string, opts: { compact?: boolean } = {}) {
+/**
+ * Minor units are noise in high-denomination currencies, and above a thousand anywhere.
+ * Below that they are the difference between "R$ 3,94" and a wrong-looking "R$ 4" that
+ * makes two holdings appear not to sum to their own total. Magnitude decides, not the
+ * caller — `compact` only ever shortens what is already safe to shorten.
+ */
+export function formatLocal(amount: number, code: string, _opts: { compact?: boolean } = {}) {
   const c = CURRENCY_BY_CODE.get(code)
   if (!c) return amount.toFixed(2)
-  const fractionDigits = amount >= 1000 || code === 'NGN' || code === 'IDR' ? 0 : 2
+  const dropDecimals = code === 'NGN' || code === 'IDR' || Math.abs(amount) >= 1000
   return new Intl.NumberFormat(c.locale, {
     style: 'currency',
     currency: c.code,
-    maximumFractionDigits: opts.compact ? 0 : fractionDigits,
-    minimumFractionDigits: opts.compact ? 0 : 0,
+    maximumFractionDigits: dropDecimals ? 0 : 2,
+    minimumFractionDigits: 0,
   }).format(amount)
 }
 

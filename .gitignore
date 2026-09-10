@@ -12,3 +12,4 @@ web/tsconfig.tsbuildinfo
 *.tsbuildinfo
 
 .vercel
+.demo-folio.json

@@ -1,11 +1,9 @@
 import 'server-only'
-import { parseAbiItem, type Address } from 'viem'
+import type { Address } from 'viem'
 import { publicClient, getStockPrices } from './prices'
 import { folioVaultAbi } from './vault-abi'
-import { VAULT_ADDRESS, VAULT_DEPLOY_BLOCK } from './deployment'
+import { VAULT_ADDRESS } from './deployment'
 import { STOCK_BY_ADDRESS, CURRENCIES, toShares } from './assets'
-
-const TRANSFER = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)')
 
 export type HoldingView = {
   symbol: string
@@ -127,45 +125,57 @@ export async function readFolio(id: bigint): Promise<FolioView | null> {
 }
 
 /**
- * The vault is a plain ERC-721, so there is no enumeration onchain. Scanning Transfer
- * logs from the deployment block is cheap because the contract is young, and it means
- * no indexer sits between the user and their own assets.
+ * The vault is a plain ERC-721, so there is no enumeration onchain.
+ *
+ * The obvious approach — scanning Transfer logs from the deployment block — does not
+ * survive contact with a public RPC: Base's public endpoint caps `eth_getLogs` at a
+ * 2,000 block range, and the span since deployment passed 150,000 blocks within days.
+ * That is 78 requests and climbing, every time someone opens the home screen.
+ *
+ * Folio ids are sequential from 1, so reading `nextFolioId` and asking who owns each one
+ * is both cheaper and constant with chain age: one multicall, no block ranges, no
+ * indexer between a user and their own assets.
  */
+const MAX_SCAN = 2_000
+
 export async function listFolioIdsFor(owner: Address): Promise<bigint[]> {
   if (!VAULT_ADDRESS) return []
 
-  const latest = await publicClient.getBlockNumber()
-  const CHUNK = 40_000n
-  const ids = new Set<bigint>()
+  const next = (await publicClient.readContract({
+    address: VAULT_ADDRESS,
+    abi: folioVaultAbi,
+    functionName: 'nextFolioId',
+  })) as bigint
 
-  for (let from = VAULT_DEPLOY_BLOCK; from <= latest; from += CHUNK) {
-    const to = from + CHUNK - 1n > latest ? latest : from + CHUNK - 1n
-    const logs = await publicClient.getLogs({
-      address: VAULT_ADDRESS,
-      event: TRANSFER,
-      args: { to: owner },
-      fromBlock: from,
-      toBlock: to,
+  const minted = Number(next) - 1
+  if (minted <= 0) return []
+
+  // Beyond this the right answer is an indexer, not a bigger multicall.
+  const start = Math.max(1, minted - MAX_SCAN + 1)
+  const ids = Array.from({ length: minted - start + 1 }, (_, i) => BigInt(start + i))
+
+  const mine: bigint[] = []
+  const CHUNK = 200
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const slice = ids.slice(i, i + CHUNK)
+    const owners = await publicClient.multicall({
+      contracts: slice.map((id) => ({
+        address: VAULT_ADDRESS,
+        abi: folioVaultAbi,
+        functionName: 'ownerOf' as const,
+        args: [id] as const,
+      })),
+      allowFailure: true,
     })
-    for (const log of logs) if (log.args.tokenId !== undefined) ids.add(log.args.tokenId)
+    slice.forEach((id, j) => {
+      const r = owners[j]
+      if (r.status === 'success' && (r.result as Address).toLowerCase() === owner.toLowerCase()) {
+        mine.push(id)
+      }
+    })
   }
-  if (!ids.size) return []
 
-  // A folio may have been transferred on again; confirm current ownership.
-  const list = [...ids]
-  const owners = await publicClient.multicall({
-    contracts: list.map((id) => ({
-      address: VAULT_ADDRESS,
-      abi: folioVaultAbi,
-      functionName: 'ownerOf' as const,
-      args: [id] as const,
-    })),
-    allowFailure: true,
-  })
-
-  return list.filter(
-    (_, i) =>
-      owners[i].status === 'success' &&
-      (owners[i].result as Address).toLowerCase() === owner.toLowerCase(),
-  )
+  // Newest first: the home screen sorts by creation date anyway, but this keeps the
+  // truncation above meaningful if the cap is ever hit.
+  return mine.reverse()
 }
