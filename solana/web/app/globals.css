@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  margin: 0;
+  background: theme('colors.ground.inset');
+  color: theme('colors.ink.DEFAULT');
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Every figure is mono with tabular numerals, so columns of money line up and a
+   changing price does not make the layout twitch. */
+.figure {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: theme('colors.accent.DEFAULT');
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+a:hover {
+  color: theme('colors.ink.DEFAULT');
+}
+
+/* Focus is never removed. 1px accent at 3px offset, everywhere. */
+input:focus,
+textarea:focus,
+select:focus,
+button:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible {
+  outline: 1px solid theme('colors.accent.DEFAULT');
+  outline-offset: 3px;
+}
+
+::selection {
+  background: theme('colors.accent.DEFAULT');
+  color: theme('colors.ground.DEFAULT');
+}
+::placeholder {
+  color: theme('colors.body.mute');
+}
+
+@layer components {
+  /* ---- type roles, straight from the handoff ---- */
+  .t-display {
+    @apply font-sans text-[40px] font-bold uppercase leading-[0.98] tracking-display;
+  }
+  .t-screen {
+    @apply font-sans text-[30px] font-bold uppercase leading-[1.02] tracking-screen;
+  }
+  .t-section {
+    @apply font-sans text-[26px] font-bold uppercase leading-[1.02] tracking-screen;
+  }
+  /* Exactly one word per headline may take this. Never more. */
+  .t-serif {
+    @apply font-serif italic normal-case tracking-[-0.01em];
+  }
+  .t-quote {
+    @apply font-serif text-[25px] font-normal leading-[1.22];
+  }
+  .t-reassure {
+    @apply font-serif text-[18px] font-normal leading-[1.4];
+  }
+  .t-cardtitle {
+    @apply font-sans text-[13px] font-bold uppercase tracking-title;
+  }
+  .t-label {
+    @apply font-sans text-[12px] font-bold uppercase tracking-label;
+  }
+  .t-kicker {
+    @apply font-mono text-[10px] uppercase tracking-kicker text-accent;
+  }
+  .t-mono-label {
+    @apply font-mono text-[10px] uppercase tracking-monolabel text-body-mute;
+  }
+  .t-body {
+    @apply font-sans text-[14px] leading-[1.6] text-body;
+  }
+  .t-body-sm {
+    @apply font-sans text-[12.5px] leading-[1.55] text-body-soft;
+  }
+  .t-disclaimer {
+    @apply font-sans text-[11px] leading-[1.6] text-body-mute;
+  }
+  .t-figure-lg {
+    @apply figure text-[44px] font-medium leading-none tracking-figure;
+  }
+  .t-figure-md {
+    @apply figure text-[24px] font-medium tracking-[-0.02em];
+  }
+  .t-figure-sm {
+    @apply figure text-[12.5px];
+  }
+
+  /* ---- structure: rules, never fills ---- */
+  .rule-hair {
+    @apply border-rule-hair;
+  }
+  .rule-hard {
+    @apply border-ink;
+  }
+
+  /* ---- controls ---- */
+  .btn-primary {
+    @apply flex min-h-[52px] w-full items-center justify-center border border-ink bg-ink px-5
+           font-sans text-[12px] font-bold uppercase tracking-button text-ground transition-colors
+           hover:border-accent hover:bg-accent
+           disabled:cursor-not-allowed disabled:border-rule-hair disabled:bg-rule-hair disabled:text-body-mute;
+  }
+  .btn-secondary {
+    @apply flex min-h-[46px] w-full items-center justify-center border border-ink bg-transparent px-5
+           font-sans text-[11.5px] font-bold uppercase tracking-button text-ink transition-colors
+           hover:border-accent hover:text-accent
+           disabled:cursor-not-allowed disabled:border-rule-hair disabled:text-body-mute;
+  }
+  .btn-ghost {
+    @apply font-sans text-[11.5px] font-bold uppercase tracking-button text-body-soft underline
+           underline-offset-4 transition-colors hover:text-accent;
+  }
+  /* On the void ground the accent is illegible, so outlined white is the only button. */
+  .btn-on-void {
+    @apply flex min-h-[46px] items-center justify-center border border-white bg-transparent px-6
+           font-sans text-[11.5px] font-bold uppercase tracking-button text-white transition-colors
+           hover:border-accent-dark hover:text-accent-dark;
+  }
+
+  .field {
+    @apply w-full border border-ink bg-white px-4 py-3 font-sans text-[14px] text-ink outline-none;
+  }
+
+  /* A list row that shifts right on hover, revealing the inset ground behind it. */
+  .row-hover {
+    @apply -mx-2 px-2 transition-[padding-left,background-color] duration-[260ms]
+           ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:bg-ground-inset hover:pl-[12px];
+  }
+}
+
+/* Oversized decorative letterforms on the void ground. Never selectable, never read. */
+.ghost-letter {
+  color: theme('colors.ghost');
+  user-select: none;
+  pointer-events: none;
+  font-family: var(--font-instrument), Georgia, serif;
+  font-style: italic;
+  line-height: 0.8;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

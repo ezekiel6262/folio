@@ -1,0 +1,51 @@
+{
+  "_comment": "Single source of truth for Folio on Solana. Every mint below was verified on Solana mainnet on 2026-09-14: xStocks against the official Solana xStocks case study AND Jupiter's verified token list, and read on-chain for their program and extensions; every stablecoin was confirmed verified on Jupiter and routed into AAPLx. Re-check before trusting it.",
+  "cluster": "mainnet-beta",
+  "verifiedOn": "2026-09-14",
+  "programs": {
+    "folioVault": "GJY26YALBaMdimL4Kk4Abo26BNkrSVMrC2wA46TRoXnD",
+    "token": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "token2022": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+    "associatedToken": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+    "system": "11111111111111111111111111111111",
+    "computeBudget": "ComputeBudget111111111111111111111111111111",
+    "jupiterV6": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+  },
+  "keys": {
+    "_comment": "Public addresses only. The secrets live in solana/.keys (gitignored); only the fee payer ever goes to a server.",
+    "deployer": "D3agrnhRwhHuni37ujsHCcmQHGznN8UxwtWwLzZQKq9G",
+    "feePayer": "J8pwRZ6VjxJ6MWrEVUSK9ThKxkfYP7M9HDqfm2jN1iM5"
+  },
+  "vault": {
+    "_comment": "Per-folio cap in whole shares. The program is unaudited, so each folio is sized to hold a demonstrable amount, not an unbounded one.",
+    "stockCapShares": 0.5,
+    "maxCompaniesPerPurchase": 3
+  },
+  "stocks": [
+    { "symbol": "AAPLx", "display": "Apple", "name": "Apple Inc.", "mint": "XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp", "decimals": 8, "tokenProgram": "token2022", "sector": "consumer-tech", "tags": ["hardware", "consumer", "large-cap", "quality"] },
+    { "symbol": "NVDAx", "display": "NVIDIA", "name": "NVIDIA Corporation", "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh", "decimals": 8, "tokenProgram": "token2022", "sector": "semiconductors", "tags": ["chips", "ai", "growth", "large-cap"] },
+    { "symbol": "MSFTx", "display": "Microsoft", "name": "Microsoft Corporation", "mint": "XspzcW1PRtgf6Wj92HCiZdjzKCyFekVD8P5Ueh3dRMX", "decimals": 8, "tokenProgram": "token2022", "sector": "software", "tags": ["software", "cloud", "ai", "quality", "large-cap"] },
+    { "symbol": "GOOGLx", "display": "Alphabet", "name": "Alphabet Inc.", "mint": "XsCPL9dNWBMvFtTmwcCA5v3xWPSMEBCszbQdiLLq6aN", "decimals": 8, "tokenProgram": "token2022", "sector": "internet", "tags": ["ads", "search", "ai", "large-cap"] },
+    { "symbol": "METAx", "display": "Meta", "name": "Meta Platforms Inc.", "mint": "Xsa62P5mvPszXL1krVUnU5ar38bBSVcWAB6fmPCo5Zu", "decimals": 8, "tokenProgram": "token2022", "sector": "internet", "tags": ["ads", "social", "ai", "large-cap"] },
+    { "symbol": "AMZNx", "display": "Amazon", "name": "Amazon.com Inc.", "mint": "Xs3eBt7uRfJX8QUs4suhyU8p2M6DoUDrJyWBa8LLZsg", "decimals": 8, "tokenProgram": "token2022", "sector": "internet", "tags": ["retail", "cloud", "consumer", "large-cap"] },
+    { "symbol": "TSLAx", "display": "Tesla", "name": "Tesla Inc.", "mint": "XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB", "decimals": 8, "tokenProgram": "token2022", "sector": "auto", "tags": ["ev", "energy", "growth", "volatile"] },
+    { "symbol": "SPYx", "display": "S&P 500", "name": "SPDR S&P 500 ETF", "mint": "XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W", "decimals": 8, "tokenProgram": "token2022", "sector": "index", "tags": ["index", "broad", "diversified", "quality", "large-cap"] }
+  ],
+  "stablecoins": [
+    { "symbol": "USDC", "pegged": "USD", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "decimals": 6, "tokenProgram": "token", "primary": true },
+    { "symbol": "USDT", "pegged": "USD", "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", "decimals": 6, "tokenProgram": "token" },
+    { "symbol": "PYUSD", "pegged": "USD", "mint": "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo", "decimals": 6, "tokenProgram": "token2022" },
+    { "symbol": "USDG", "pegged": "USD", "mint": "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH", "decimals": 6, "tokenProgram": "token2022" },
+    { "symbol": "USD1", "pegged": "USD", "mint": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB", "decimals": 6, "tokenProgram": "token" },
+    { "symbol": "EURC", "pegged": "EUR", "mint": "HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr", "decimals": 6, "tokenProgram": "token" },
+    { "symbol": "IDRX", "pegged": "IDR", "mint": "idrxZcP8xiKkYk6XGD4uz1dxEYCWSgKDHqgjsBbwDur", "decimals": 2, "tokenProgram": "token", "note": "Verified but thin (~$9.5k liquidity); buys route at under 1% impact at small sizes." }
+  ],
+  "issuerPowers": {
+    "_comment": "Read on-chain from every xStock mint. The UI must disclose these; the vault cannot override them.",
+    "freezeAuthority": true,
+    "pausable": true,
+    "permanentDelegate": true,
+    "transferHookActive": false,
+    "scaledUiAmountMultiplier": "live, and not 1.0 (AAPLx 1.00266 on 2026-09-14, with a new value already scheduled)"
+  }
+}

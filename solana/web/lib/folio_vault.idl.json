@@ -1,0 +1,1814 @@
+{
+  "address": "GJY26YALBaMdimL4Kk4Abo26BNkrSVMrC2wA46TRoXnD",
+  "metadata": {
+    "name": "folio_vault",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Folio vault: named, giftable baskets of tokenized stocks"
+  },
+  "instructions": [
+    {
+      "name": "claim",
+      "docs": [
+        "Take an escrowed folio. The claim link carries a signing key, not a secret to be",
+        "revealed: its signature covers the whole transaction, including who is claiming,",
+        "so a block producer who sees the transaction cannot re-point it at themselves."
+      ],
+      "discriminator": [
+        62,
+        198,
+        214,
+        193,
+        213,
+        159,
+        108,
+        210
+      ],
+      "accounts": [
+        {
+          "name": "folio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "claim_key",
+          "docs": [
+            "The key carried in the claim link. Its signature is the proof of possession."
+          ],
+          "signer": true
+        },
+        {
+          "name": "claimant",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "close_folio",
+      "docs": [
+        "Close a folio whose vaults are all closed. Its deposit returns to whoever paid."
+      ],
+      "discriminator": [
+        102,
+        114,
+        189,
+        148,
+        142,
+        27,
+        42,
+        250
+      ],
+      "accounts": [
+        {
+          "name": "folio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rent_payer",
+          "writable": true,
+          "relations": [
+            "folio"
+          ]
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "folio"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "close_vault",
+      "docs": [
+        "Close an emptied vault. Its deposit goes back to whoever paid for it — never to",
+        "the caller — so sponsoring account deposits cannot be farmed by open/close cycles."
+      ],
+      "discriminator": [
+        141,
+        103,
+        17,
+        126,
+        72,
+        75,
+        29,
+        29
+      ],
+      "accounts": [
+        {
+          "name": "folio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "folio"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "rent_payer",
+          "writable": true,
+          "relations": [
+            "folio"
+          ]
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "folio"
+          ]
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_folio",
+      "docs": [
+        "Create an empty folio. Moving no money, this is safe to send as its own",
+        "transaction ahead of the purchase: if the purchase then fails, the user is left",
+        "with an empty folio they can close, never with half-spent funds.",
+        "",
+        "`recipient` = Some(key) gives it straight to `key` (the creator, to keep it).",
+        "`recipient` = None escrows it for a claim link, which requires `claim_key`."
+      ],
+      "discriminator": [
+        84,
+        77,
+        22,
+        194,
+        53,
+        198,
+        182,
+        72
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "folio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "arg",
+                "path": "nonce"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "docs": [
+            "Pays the account deposit. In sponsored mode this is the app's fee payer, and it",
+            "is recorded so the deposit can only ever be returned to it."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u64"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "unlock_at",
+          "type": "i64"
+        },
+        {
+          "name": "reclaim_after",
+          "type": "i64"
+        },
+        {
+          "name": "claim_key",
+          "type": "pubkey"
+        },
+        {
+          "name": "policy_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "recipient",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "deposit",
+      "docs": [
+        "Move tokens from the depositor into the folio's vault. Anyone may top up any",
+        "folio, including a locked or escrowed one."
+      ],
+      "discriminator": [
+        242,
+        35,
+        198,
+        137,
+        82,
+        225,
+        242,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "folio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  115,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "depositor_token",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "folio"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "depositor",
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "extend_lock",
+      "docs": [
+        "Push the unlock date further out. It can never be brought closer."
+      ],
+      "discriminator": [
+        68,
+        151,
+        140,
+        144,
+        139,
+        122,
+        118,
+        170
+      ],
+      "accounts": [
+        {
+          "name": "folio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "folio"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "new_unlock_at",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "address": "D3agrnhRwhHuni37ujsHCcmQHGznN8UxwtWwLzZQKq9G"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "reclaim",
+      "docs": [
+        "Return an unclaimed gift to whoever made it, once its window has passed. A",
+        "reclaimed gift is immediately usable — its funder is not locked out of it."
+      ],
+      "discriminator": [
+        44,
+        177,
+        236,
+        249,
+        145,
+        109,
+        163,
+        186
+      ],
+      "accounts": [
+        {
+          "name": "folio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "signer": true,
+          "relations": [
+            "folio"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "set_asset",
+      "docs": [
+        "Allow or forbid a mint, and set the most raw units of it one folio may hold.",
+        "The cap is explicit on purpose: this code is unaudited, so the vault is sized",
+        "to hold a demonstrable amount, not an unbounded one."
+      ],
+      "discriminator": [
+        243,
+        216,
+        48,
+        30,
+        63,
+        58,
+        91,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  115,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "allowed",
+          "type": "bool"
+        },
+        {
+          "name": "cap",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "set_paused",
+      "docs": [
+        "Pausing stops new money coming in. It never stops anyone reaching money that is",
+        "already here: claim, reclaim, withdraw and close all keep working."
+      ],
+      "discriminator": [
+        91,
+        60,
+        125,
+        192,
+        176,
+        225,
+        166,
+        218
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "sync_vault",
+      "docs": [
+        "Record what a swap paid straight into a folio's vault, and enforce the cap on the",
+        "real balance. Purchases route the swap's output directly into the vault, so no",
+        "stock ever sits loose in the buyer's wallet; this is the step that makes it count.",
+        "If the cap would be breached it fails, and because it runs in the same transaction",
+        "as the swap, the whole purchase reverts. Permissionless: it only records and checks."
+      ],
+      "discriminator": [
+        19,
+        211,
+        150,
+        118,
+        94,
+        208,
+        138,
+        204
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "folio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  115,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "folio"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "transfer_folio",
+      "docs": [
+        "Give a folio you own to someone else. Any lock travels with it."
+      ],
+      "discriminator": [
+        234,
+        110,
+        223,
+        96,
+        203,
+        74,
+        29,
+        104
+      ],
+      "accounts": [
+        {
+          "name": "folio",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "folio"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "new_owner",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "withdraw",
+      "docs": [
+        "Move tokens out of an unlocked folio you own, to any token account you choose.",
+        "Selling is this followed by a swap in the same transaction."
+      ],
+      "discriminator": [
+        183,
+        18,
+        70,
+        156,
+        148,
+        109,
+        161,
+        34
+      ],
+      "accounts": [
+        {
+          "name": "folio",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "folio"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "folio"
+          ]
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "AssetConfig",
+      "discriminator": [
+        57,
+        112,
+        247,
+        166,
+        247,
+        64,
+        140,
+        23
+      ]
+    },
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "Folio",
+      "discriminator": [
+        226,
+        138,
+        200,
+        214,
+        206,
+        87,
+        48,
+        31
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "AssetConfigured",
+      "discriminator": [
+        197,
+        158,
+        128,
+        228,
+        166,
+        38,
+        26,
+        134
+      ]
+    },
+    {
+      "name": "FolioClaimed",
+      "discriminator": [
+        169,
+        110,
+        191,
+        149,
+        206,
+        225,
+        133,
+        4
+      ]
+    },
+    {
+      "name": "FolioCreated",
+      "discriminator": [
+        253,
+        189,
+        157,
+        156,
+        193,
+        73,
+        116,
+        14
+      ]
+    },
+    {
+      "name": "FolioFunded",
+      "discriminator": [
+        226,
+        1,
+        223,
+        40,
+        157,
+        229,
+        77,
+        105
+      ]
+    },
+    {
+      "name": "FolioReclaimed",
+      "discriminator": [
+        250,
+        98,
+        116,
+        94,
+        39,
+        197,
+        254,
+        14
+      ]
+    },
+    {
+      "name": "FolioSynced",
+      "discriminator": [
+        34,
+        57,
+        101,
+        158,
+        68,
+        146,
+        161,
+        154
+      ]
+    },
+    {
+      "name": "FolioTransferred",
+      "discriminator": [
+        158,
+        185,
+        104,
+        217,
+        242,
+        192,
+        166,
+        192
+      ]
+    },
+    {
+      "name": "LockExtended",
+      "discriminator": [
+        25,
+        118,
+        227,
+        150,
+        119,
+        138,
+        207,
+        234
+      ]
+    },
+    {
+      "name": "PauseChanged",
+      "discriminator": [
+        238,
+        188,
+        213,
+        78,
+        134,
+        209,
+        178,
+        218
+      ]
+    },
+    {
+      "name": "Withdrawn",
+      "discriminator": [
+        20,
+        89,
+        223,
+        198,
+        194,
+        124,
+        219,
+        13
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NotAdmin",
+      "msg": "Only the admin can do that"
+    },
+    {
+      "code": 6001,
+      "name": "Paused",
+      "msg": "New folios and deposits are paused"
+    },
+    {
+      "code": 6002,
+      "name": "NameTooLong",
+      "msg": "Folio names are at most 40 bytes"
+    },
+    {
+      "code": 6003,
+      "name": "MissingClaimKey",
+      "msg": "A claim-link folio needs a claim key"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidRecipient",
+      "msg": "That is not a valid recipient"
+    },
+    {
+      "code": 6005,
+      "name": "ZeroAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6006,
+      "name": "AssetNotAllowed",
+      "msg": "That asset is not on the allowlist"
+    },
+    {
+      "code": 6007,
+      "name": "AssetCapExceeded",
+      "msg": "That would exceed this asset's per-folio cap"
+    },
+    {
+      "code": 6008,
+      "name": "TooManyAssets",
+      "msg": "A folio can hold at most 8 different assets"
+    },
+    {
+      "code": 6009,
+      "name": "NotEscrowed",
+      "msg": "That folio is not waiting to be claimed"
+    },
+    {
+      "code": 6010,
+      "name": "Escrowed",
+      "msg": "That folio is still waiting to be claimed"
+    },
+    {
+      "code": 6011,
+      "name": "WrongClaimKey",
+      "msg": "That claim key does not match this folio"
+    },
+    {
+      "code": 6012,
+      "name": "NotOwner",
+      "msg": "Only the folio's owner can do that"
+    },
+    {
+      "code": 6013,
+      "name": "NotCreator",
+      "msg": "Only the folio's creator can do that"
+    },
+    {
+      "code": 6014,
+      "name": "Locked",
+      "msg": "This folio is locked until its unlock date"
+    },
+    {
+      "code": 6015,
+      "name": "NotReclaimable",
+      "msg": "This gift cannot be reclaimed yet"
+    },
+    {
+      "code": 6016,
+      "name": "LockNotExtendable",
+      "msg": "A lock can only be pushed later, never earlier"
+    },
+    {
+      "code": 6017,
+      "name": "InsufficientVault",
+      "msg": "The vault does not hold that much"
+    },
+    {
+      "code": 6018,
+      "name": "VaultNotEmpty",
+      "msg": "Empty the vault before closing it"
+    },
+    {
+      "code": 6019,
+      "name": "FolioNotEmpty",
+      "msg": "Close every vault before closing the folio"
+    },
+    {
+      "code": 6020,
+      "name": "WrongRentPayer",
+      "msg": "Deposits can only be returned to whoever paid them"
+    },
+    {
+      "code": 6021,
+      "name": "MathOverflow",
+      "msg": "Arithmetic overflow"
+    }
+  ],
+  "types": [
+    {
+      "name": "AssetConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "allowed",
+            "type": "bool"
+          },
+          {
+            "name": "cap",
+            "docs": [
+              "Max raw units one folio may hold of this mint."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AssetConfigured",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "allowed",
+            "type": "bool"
+          },
+          {
+            "name": "cap",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Folio",
+      "docs": [
+        "Field order is part of the interface: `owner` sits at byte 8 and `creator` at byte",
+        "40 so clients can list \"folios I own\" and \"gifts I made\" with a single memcmp filter."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "Pubkey::default() while escrowed behind a claim link."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "rent_payer",
+            "docs": [
+              "Paid the account deposits; the only address those deposits are ever returned to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "claim_key",
+            "docs": [
+              "Public half of the claim link's key. Pubkey::default() once claimed or if unused."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "policy_hash",
+            "docs": [
+              "Commitment to the off-chain allocation policy that produced this basket."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "unlock_at",
+            "type": "i64"
+          },
+          {
+            "name": "reclaim_after",
+            "type": "i64"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "escrowed",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "asset_count",
+            "type": "u8"
+          },
+          {
+            "name": "assets",
+            "type": {
+              "array": [
+                "pubkey",
+                8
+              ]
+            }
+          },
+          {
+            "name": "name",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FolioClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          },
+          {
+            "name": "claimant",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FolioCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "escrowed",
+            "type": "bool"
+          },
+          {
+            "name": "unlock_at",
+            "type": "i64"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FolioFunded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          },
+          {
+            "name": "funder",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FolioReclaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FolioSynced",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "balance",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FolioTransferred",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          },
+          {
+            "name": "from",
+            "type": "pubkey"
+          },
+          {
+            "name": "to",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LockExtended",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          },
+          {
+            "name": "previous",
+            "type": "i64"
+          },
+          {
+            "name": "new_unlock_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PauseChanged",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "paused",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Withdrawn",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          },
+          {
+            "name": "to",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}

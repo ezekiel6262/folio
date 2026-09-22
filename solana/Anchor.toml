@@ -1,0 +1,19 @@
+[toolchain]
+anchor_version = "1.2.0"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+folio_vault = "GJY26YALBaMdimL4Kk4Abo26BNkrSVMrC2wA46TRoXnD"
+
+[programs.mainnet]
+folio_vault = "GJY26YALBaMdimL4Kk4Abo26BNkrSVMrC2wA46TRoXnD"
+
+[provider]
+cluster = "localnet"
+wallet = ".keys/deployer.json"
+
+[scripts]
+test = "cargo test -p folio_vault --features test-sbf"

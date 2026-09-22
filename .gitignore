@@ -13,3 +13,14 @@ web/tsconfig.tsbuildinfo
 
 .vercel
 .demo-folio.json
+
+# Solana: keys and build output never enter git
+solana/.keys/
+solana/target/
+solana/**/node_modules/
+*-keypair.json
+.env.solana
+solana/programs/folio_vault/tests/fixtures/*.so
+solana/web/.next/
+solana/web/out/
+solana/web/next-env.d.ts

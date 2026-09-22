@@ -1,0 +1,34 @@
+[package]
+name = "folio_vault"
+version = "0.1.0"
+description = "Folio vault: named, giftable baskets of tokenized stocks"
+edition = "2021"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "folio_vault"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+test-sbf = []
+
+[dependencies]
+anchor-lang = { version = "1.2.0", features = ["init-if-needed"] }
+anchor-spl = "1.2.0"
+
+# Versions match what Anchor 1.2's own LiteSVM test template pins, so every Solana type
+# in the tests is the same type the program uses — no conversions at the boundary.
+[dev-dependencies]
+litesvm = "0.10.0"
+solana-account = "3"
+solana-instruction = "3"
+solana-keypair = "3.0.1"
+solana-signer = "3.0.0"
+solana-transaction = "3.0.2"
+solana-message = "3.0.1"
