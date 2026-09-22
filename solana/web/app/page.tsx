@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
 import { FolioRow } from '@/components/folio-row'
 import { AppHeader, CurrencyChip, HairRule, HardRule, Kicker, MonoLabel, Screen, SideNote, Spinner, Stop } from '@/components/ui'
-import { STOCK_BY_SYMBOL } from '@/lib/assets'
+import { STOCK_BY_SYMBOL, STOCKS } from '@/lib/assets'
 import { formatLocal } from '@/lib/currencies'
 import { AccountButton, useFolioWallet } from '@/lib/wallet'
 import type { WalletBalances } from '@/lib/balances'
@@ -46,7 +46,9 @@ function Door() {
   const featured = ['AAPLx', 'NVDAx', 'SPYx', 'TSLAx']
 
   return (
-    <Screen>
+    <Screen wide>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-16">
+      <div>
       <Kicker>US shares · any currency</Kicker>
       <h1 className="t-display mt-4">
         Own Apple.
@@ -59,12 +61,14 @@ function Door() {
         shares in your own name — kept, locked until a date, or given to someone you love.
       </p>
 
-      <button onClick={login} className="btn-primary mt-7">
+      <button onClick={login} className="btn-primary mt-7 lg:max-w-[360px]">
         Sign up or sign in
       </button>
-      <p className="t-disclaimer mt-3 text-center">Email, phone, Google or Apple. No app, no seed phrase, no fees to pay.</p>
+      <p className="t-disclaimer mt-3 text-center lg:text-left">Email, phone, Google or Apple. No app, no seed phrase, no fees to pay.</p>
+      </div>
 
-      <div className="mt-9 border-y border-ink bg-ground-inset px-4 py-4">
+      <div>
+      <div className="mt-9 border-y border-ink bg-ground-inset px-4 py-4 lg:mt-0">
         <MonoLabel>Market prices, per share</MonoLabel>
         <div className="mt-3">
           {featured.map((symbol) => {
@@ -108,6 +112,8 @@ function Door() {
         issued by Backed, available only to eligible people outside the United States; the issuer
         can freeze, pause or move them, and Folio cannot override that.
       </p>
+      </div>
+      </div>
     </Screen>
   )
 }
@@ -151,7 +157,9 @@ function SignedIn() {
   const invested = owned.reduce((a, f) => a + f.totalUsd, 0)
 
   return (
-    <Screen>
+    <Screen wide>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-14">
+      <div>
       <MonoLabel>Ready to invest</MonoLabel>
       {balances.isLoading ? (
         <div className="mt-2 h-11 w-48 bg-ground-inset" />
@@ -163,7 +171,7 @@ function SignedIn() {
           'No stablecoins yet'}
       </p>
 
-      <div className="mt-6 grid grid-cols-2 gap-2">
+      <div className="mt-6 grid grid-cols-2 gap-2 lg:max-w-[440px]">
         <Link href="/deposit" className="btn-secondary no-underline">
           Add money
         </Link>
@@ -201,8 +209,11 @@ function SignedIn() {
         )}
       </div>
 
+      </div>
+
+      <div>
       {waiting.length > 0 && (
-        <div className="mt-10">
+        <div className="mt-10 lg:mt-0 lg:mb-10">
           <p className="t-label">Gifts you sent, not yet claimed</p>
           <HardRule className="mt-2.5" />
           {waiting.map((f) => (
@@ -210,7 +221,39 @@ function SignedIn() {
           ))}
         </div>
       )}
+      <div className="hidden lg:block">
+        <MarketPanel />
+      </div>
+      </div>
+      </div>
     </Screen>
+  )
+}
+
+/** Desktop only: live prices beside the portfolio. */
+function MarketPanel() {
+  const { code, usdToLocal, shareUsd, loading } = useCurrency()
+  return (
+    <div className="border-y border-ink bg-ground-inset px-4 py-4">
+      <div className="flex items-baseline justify-between">
+        <MonoLabel>Market, per share</MonoLabel>
+        <Link href="/markets" className="font-mono text-[10px] uppercase tracking-monolabel text-accent no-underline">
+          All →
+        </Link>
+      </div>
+      <div className="mt-3">
+        {STOCKS.map((s) => (
+          <div key={s.symbol} className="flex items-baseline justify-between border-t border-rule-mid py-2.5 first:border-t-0">
+            <span className="font-sans text-[13px] text-ink">{s.display}</span>
+            {loading || !shareUsd[s.symbol] ? (
+              <span className="h-3 w-14 bg-rule-mid/50" />
+            ) : (
+              <span className="figure text-[12.5px] text-ink">{formatLocal(usdToLocal(shareUsd[s.symbol]), code)}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 

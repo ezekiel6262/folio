@@ -3,6 +3,7 @@ import { Archivo, Instrument_Serif, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { CurrencyProvider } from '@/components/currency-context'
+import { AppShell } from '@/components/app-shell'
 import { EligibilityGate } from '@/components/eligibility-gate'
 
 const archivo = Archivo({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-archivo', display: 'swap' })
@@ -30,8 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <CurrencyProvider>
             <EligibilityGate>
-              {/* The product is a phone. On wider screens it sits on the inset ground. */}
-              <div className="mx-auto min-h-screen w-full max-w-[430px] bg-ground">{children}</div>
+              <AppShell>{children}</AppShell>
             </EligibilityGate>
           </CurrencyProvider>
         </Providers>

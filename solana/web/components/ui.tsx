@@ -74,7 +74,7 @@ export function CurrencyChip() {
 /** In-app header: logo left, currency and account right, 2px bottom rule. */
 export function AppHeader({ right }: { right?: ReactNode }) {
   return (
-    <header className="sticky top-0 z-20 border-b-2 border-ink bg-ground">
+    <header className="sticky top-0 z-20 border-b-2 border-ink bg-ground lg:hidden">
       <div className="flex items-center justify-between px-5 py-3.5">
         <Link href="/" className="flex items-center gap-2 no-underline">
           <Logo size={16} />
@@ -91,7 +91,7 @@ export function FlowHeader({ title, step }: { title: string; step?: string }) {
   const router = useRouter()
   return (
     <header className="sticky top-0 z-20 border-b-2 border-ink bg-ground">
-      <div className="flex items-center gap-3 px-5 py-3.5">
+      <div className="mx-auto flex w-full items-center gap-3 px-5 py-3.5 lg:max-w-[760px] lg:px-10">
         <button
           onClick={() => router.back()}
           aria-label="Back"
@@ -107,10 +107,25 @@ export function FlowHeader({ title, step }: { title: string; step?: string }) {
 }
 
 /** Screens enter with a rise. Wraps the scrolling body of every route. */
-export function Screen({ children, padded = true, void: isVoid = false }: { children: ReactNode; padded?: boolean; void?: boolean }) {
+export function Screen({
+  children,
+  padded = true,
+  void: isVoid = false,
+  wide = false,
+}: {
+  children: ReactNode
+  padded?: boolean
+  void?: boolean
+  /** Two-column pages on desktop; single-purpose flows stay at a readable width. */
+  wide?: boolean
+}) {
   return (
-    <main className={`animate-rise min-h-screen ${isVoid ? 'bg-ink-void' : 'bg-ground'} ${padded ? 'px-5 pb-16 pt-7' : ''}`}>
-      {children}
+    <main className={`animate-rise min-h-screen ${isVoid ? 'bg-ink-void' : 'bg-ground'}`}>
+      <div
+        className={`mx-auto w-full ${wide ? 'lg:max-w-[1180px]' : 'lg:max-w-[760px]'} ${padded ? 'px-5 pb-16 pt-7 lg:px-10 lg:pt-12' : ''}`}
+      >
+        {children}
+      </div>
     </main>
   )
 }

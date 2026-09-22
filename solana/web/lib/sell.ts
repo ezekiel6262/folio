@@ -6,6 +6,7 @@ import { ata, closeVaultIx, createAtaIdempotentIx, TOKEN_2022, withdrawIx } from
 import { readFolio } from './folio-reader'
 import { connection, getMarket } from './market'
 import { DEFAULT_SLIPPAGE_BPS, jupiterQuote } from './quote'
+import { harvestWithheldIx, transferFee } from './transfer-fee'
 
 /**
  * Sells part or all of one holding back to USDC in the owner's account, in one
@@ -76,10 +77,15 @@ export async function buildSell(a: {
 
   const s = stock(a.symbol)
   const usdc = stablecoin('USDC')
-  const [quote, market] = await Promise.all([jupiterQuote(s.mint, usdc.mint, amount, DEFAULT_SLIPPAGE_BPS), getMarket()])
+  // An issuer transfer fee is withheld on the way out of the vault, so only what lands in
+  // the owner's account can be sold.
+  const sellable = amount - (await transferFee(s.mint, amount))
+  if (sellable <= 0n) throw new Error('That is too small to sell after the issuer fee')
+  const [quote, market] = await Promise.all([jupiterQuote(s.mint, usdc.mint, sellable, DEFAULT_SLIPPAGE_BPS), getMarket()])
 
   const m = market.stocks[a.symbol]
   const shares = toShares(amount, s.decimals, m?.multiplier ?? 1)
+  const hasFee = sellable !== amount
   const usdcOut = Number(quote.outAmount) / 10 ** usdc.decimals
   const minUsdcOut = Number(quote.otherAmountThreshold) / 10 ** usdc.decimals
   const marketUsd = shares * (m?.shareUsd ?? 0)
@@ -110,11 +116,19 @@ export async function buildSell(a: {
   const ixs: TransactionInstruction[] = []
   if (opened) ixs.push(createAtaIdempotentIx({ payer: feePayer, owner, mint, tokenProgram: TOKEN_2022 }))
   ixs.push(withdrawIx({ folio: folioKey, mint, owner, destination: ownerStock, amount }))
-  if (all) ixs.push(closeVaultIx({ folio: folioKey, mint, owner, rentPayer: new PublicKey(folio.rentPayer) }))
+  if (all) {
+    // Fees withheld from earlier deposits block the close until they go back to the mint.
+    const vault = ata(folioKey, mint, TOKEN_2022)
+    if (hasFee || (await transferFee(s.mint, 10_000n)) > 0n) ixs.push(harvestWithheldIx(mint, [vault]))
+    ixs.push(closeVaultIx({ folio: folioKey, mint, owner, rentPayer: new PublicKey(folio.rentPayer) }))
+  }
   for (const setup of jup.setupInstructions ?? []) ixs.push(toIx(setup))
   ixs.push(toIx(jup.swapInstruction))
   if (jup.cleanupInstruction) ixs.push(toIx(jup.cleanupInstruction))
-  if (opened) ixs.push(closeTokenAccountIx(ownerStock, feePayer, owner))
+  if (opened) {
+    if (hasFee) ixs.push(harvestWithheldIx(mint, [ownerStock]))
+    ixs.push(closeTokenAccountIx(ownerStock, feePayer, owner))
+  }
 
   const units = (jup.computeUnitLimit ?? 300_000) + CU_WITHDRAW + (all ? CU_CLOSE : 0) + (opened ? CU_ATA + CU_CLOSE : 0) + 20_000
   const [tables, latest] = await Promise.all([

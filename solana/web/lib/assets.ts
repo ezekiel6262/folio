@@ -17,6 +17,9 @@ export type Stock = {
   tokenProgram: TokenProgramKind
   sector: string
   tags: string[]
+  /** Listed on an exchange (xStocks) or a private company before its IPO (PreStocks). */
+  kind: 'listed' | 'private'
+  issuer: string
 }
 
 export type Stablecoin = {
@@ -39,6 +42,9 @@ export const STABLECOINS = raw.stablecoins as Stablecoin[]
 /** One atomic purchase fits at most this many companies (measured on mainnet). */
 export const MAX_COMPANIES: number = raw.vault.maxCompaniesPerPurchase
 export const STOCK_CAP_SHARES: number = raw.vault.stockCapShares
+
+export const LISTED = STOCKS.filter((s) => s.kind === 'listed')
+export const PRIVATE = STOCKS.filter((s) => s.kind === 'private')
 
 export const STOCK_BY_SYMBOL = new Map(STOCKS.map((s) => [s.symbol, s]))
 export const STOCK_BY_MINT = new Map(STOCKS.map((s) => [s.mint, s]))

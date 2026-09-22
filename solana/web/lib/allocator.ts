@@ -85,6 +85,36 @@ const THEMES: Record<string, string[]> = {
   diversified: ['diversified'],
   'spread out': ['diversified'],
   safe: ['quality'],
+  'big tech': ['large-cap'],
+  tech: ['software', 'hardware', 'cloud'],
+  technology: ['software', 'hardware', 'cloud'],
+  // Private companies are only ever included when asked for — by name or like this.
+  'pre-ipo': ['private'],
+  'pre ipo': ['private'],
+  preipo: ['private'],
+  private: ['private'],
+  'private companies': ['private'],
+  'private company': ['private'],
+  unlisted: ['private'],
+  'before they go public': ['private'],
+  'before the ipo': ['private'],
+  'before ipo': ['private'],
+  startups: ['private'],
+  space: ['space'],
+  rockets: ['space'],
+  rocket: ['space'],
+  defense: ['defense'],
+  defence: ['defense'],
+  military: ['defense'],
+  robots: ['robotics'],
+  robot: ['robotics'],
+  robotics: ['robotics'],
+  humanoid: ['robotics'],
+  'prediction market': ['prediction'],
+  'prediction markets': ['prediction'],
+  betting: ['prediction'],
+  biotech: ['biotech'],
+  brain: ['biotech'],
 }
 
 /** How people actually refer to these. Normalised the same way the prompt is. */
@@ -112,6 +142,20 @@ const RAW_ALIASES: Record<string, string> = {
   'sp 500': 'SPYx',
   sp500: 'SPYx',
   spy: 'SPYx',
+  anthropic: 'ANTHROPIC',
+  claude: 'ANTHROPIC',
+  openai: 'OPENAI',
+  'open ai': 'OPENAI',
+  chatgpt: 'OPENAI',
+  spacex: 'SPACEX',
+  'space x': 'SPACEX',
+  starlink: 'SPACEX',
+  anduril: 'ANDURIL',
+  'figure ai': 'FIGUREAI',
+  figureai: 'FIGUREAI',
+  kalshi: 'KALSHI',
+  neuralink: 'NEURALINK',
+  polymarket: 'POLYMARKET',
 }
 
 const TILT_WORDS: Record<string, Tilt> = {
@@ -236,7 +280,15 @@ export const rulesAllocator: Allocator = {
     const tilt: Tilt = forcedTilt ?? detectTilt(positive) ?? 'balanced'
 
     const excluded: Allocation['excluded'] = []
+    const wantsPrivate = wantedTags.has('private')
+    const alsoListed = /\b(?:public and private|private and public|listed|and public|plus public)\b/.test(normalise(positive))
+    // With a real theme alongside, "private" narrows the field rather than scoring a match.
+    const themeTags = new Set([...wantedTags].filter((t) => t !== 'private' || wantedTags.size === 1))
     const eligible = STOCKS.filter((s) => {
+      // A private company never slips into a basket by theme alone; it has to be asked for.
+      if (s.kind === 'private' && !wantsPrivate && !named.includes(s.symbol)) return false
+      // "Before they go public" means private companies, unless listed ones are asked for too.
+      if (s.kind === 'listed' && wantsPrivate && !alsoListed && !named.includes(s.symbol)) return false
       if (banned.has(s.symbol)) {
         excluded.push({ symbol: s.symbol, display: s.display, reason: 'you ruled it out by name' })
         return false
@@ -265,7 +317,7 @@ export const rulesAllocator: Allocator = {
       mode = 'themed'
       pool = eligible
         .map((s) => {
-          const hits = s.tags.filter((t) => wantedTags.has(t))
+          const hits = s.tags.filter((t) => themeTags.has(t))
           let score = hits.length
           if (tilt === 'growth' && s.tags.some((t) => t === 'growth' || t === 'ai')) score += 0.6
           if (tilt === 'quality' && s.tags.some((t) => t === 'quality' || t === 'large-cap')) score += 0.6
@@ -274,6 +326,14 @@ export const rulesAllocator: Allocator = {
         })
         .filter((p) => p.score > 0)
         .sort((a, b) => b.score - a.score)
+      // Asked for both kinds: alternate them, best first, so the basket really is a mix.
+      if (wantsPrivate && alsoListed) {
+        const listed = pool.filter((p) => p.stock.kind === 'listed')
+        const priv = pool.filter((p) => p.stock.kind === 'private')
+        pool = Array.from({ length: Math.max(listed.length, priv.length) }, (_, i) => [listed[i], priv[i]])
+          .flat()
+          .filter((p): p is (typeof pool)[number] => Boolean(p))
+      }
       truncated = pool.length > MAX_COMPANIES
       pool = pool.slice(0, MAX_COMPANIES)
       if (!pool.length) {

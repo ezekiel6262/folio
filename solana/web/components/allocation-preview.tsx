@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useCurrency } from './currency-context'
 import { HardRule, MonoLabel } from './ui'
-import { formatShares } from '@/lib/assets'
+import { formatShares, STOCK_BY_SYMBOL } from '@/lib/assets'
 import { formatLocal, formatUsd } from '@/lib/currencies'
 import type { Allocation } from '@/lib/allocator'
 import type { PurchasePlan } from '@/lib/quote'
@@ -44,6 +44,11 @@ export function AllocationPreview({ allocation, plan }: { allocation: Allocation
               <span className="t-cardtitle">
                 {leg.display}{' '}
                 <span className="font-mono text-[10px] font-normal tracking-monolabel text-body-mute">{(leg.weightBps / 100).toFixed(0)}%</span>
+                {STOCK_BY_SYMBOL.get(leg.symbol)?.kind === 'private' && (
+                  <span className="ml-2 border border-accent px-1.5 py-0.5 align-middle font-mono text-[8.5px] font-normal uppercase tracking-monolabel text-accent">
+                    Pre-IPO
+                  </span>
+                )}
               </span>
               <span className="shrink-0 text-right">
                 <span className="figure block text-[14px] text-ink">{formatLocal(usdToLocal(leg.spendUsd), code)}</span>
@@ -72,6 +77,13 @@ export function AllocationPreview({ allocation, plan }: { allocation: Allocation
                   value={`${leg.gapPct >= 0 ? '+' : ''}${leg.gapPct.toFixed(2)}% ${leg.gapPct >= 0 ? 'over' : 'under'} market`}
                   accent
                 />
+                {leg.referenceUsd != null && leg.premiumPct != null && (
+                  <Detail
+                    label={STOCK_BY_SYMBOL.get(leg.symbol)?.kind === 'private' ? 'Price at last valuation' : 'Share price on exchange'}
+                    value={`${formatUsd(leg.referenceUsd)} · you pay ${leg.premiumPct >= 0 ? '+' : '−'}${Math.abs(leg.premiumPct).toFixed(1)}%`}
+                  />
+                )}
+                {leg.transferFeePct > 0 && <Detail label="Issuer transfer fee" value={`${leg.transferFeePct}% · already deducted`} />}
                 <div className="mt-2 border-t border-rule-hair pt-2">
                   <Detail label="Guaranteed worst case" value={`${formatShares(leg.minShares)} sh`} />
                 </div>

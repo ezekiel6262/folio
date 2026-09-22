@@ -36,7 +36,26 @@ const connection = new Connection(RPC, 'confirmed')
 
 const PROGRAM_ID = new PublicKey(assets.programs.folioVault)
 const FEE_PAYER = new PublicKey(assets.keys.feePayer)
-const CAP_RAW = BigInt(Math.round(assets.vault.stockCapShares * 1e8))
+const CAP_USD: number = (assets.vault as { capUsdPerAsset?: number }).capUsdPerAsset ?? 500
+
+/**
+ * The on-chain cap is in raw token units. Convert the USD cap with the live price of one
+ * whole raw-scaled token (Jupiter's pre-multiplier price), so a 5x split token and an 8- or
+ * 9-decimal token all get the same dollar limit.
+ */
+async function capsRaw(): Promise<Record<string, bigint>> {
+  const ids = assets.stocks.map((s) => s.mint).join(',')
+  const res = await fetch(`https://lite-api.jup.ag/price/v3?ids=${ids}`)
+  const prices = (await res.json()) as Record<string, { usdPrice?: number; scaledUiConfig?: { usdPricePrescaled?: number } }>
+  const out: Record<string, bigint> = {}
+  for (const s of assets.stocks) {
+    const p = prices[s.mint]
+    const perToken = p?.scaledUiConfig?.usdPricePrescaled ?? p?.usdPrice
+    if (!perToken) throw new Error(`No price for ${s.symbol}; not setting caps blind`)
+    out[s.symbol] = BigInt(Math.ceil((CAP_USD / perToken) * 10 ** s.decimals))
+  }
+  return out
+}
 
 const disc = (name: string) => createHash('sha256').update(`global:${name}`).digest().subarray(0, 8)
 const configPda = PublicKey.findProgramAddressSync([Buffer.from('config')], PROGRAM_ID)[0]
@@ -73,7 +92,7 @@ async function status() {
   const infos = await connection.getMultipleAccountsInfo(stocks.map((x) => x.pda))
   stocks.forEach(({ s }, i) => {
     const d = infos[i]?.data
-    const line = d ? `allowed ${d[40] === 1}  cap ${Number(d.readBigUInt64LE(41)) / 1e8} shares` : 'not configured'
+    const line = d ? `allowed ${d[40] === 1}  cap ${Number(d.readBigUInt64LE(41)) / 10 ** s.decimals} tokens (raw-scaled)` : 'not configured'
     console.log(`  ${s.symbol.padEnd(7)} ${line}`)
   })
 }
@@ -154,12 +173,13 @@ async function main() {
   if (cmd === 'init') return run('initialize', [initializeIx(admin)], send)
   if (cmd === 'pause' || cmd === 'unpause') return run(cmd, [setPausedIx(admin, cmd === 'pause')], send)
   if (cmd === 'assets') {
+    const caps = await capsRaw()
     // Four per transaction keeps each well inside the size and compute limits.
     for (let i = 0; i < assets.stocks.length; i += 4) {
       const batch = assets.stocks.slice(i, i + 4)
       await run(
-        `set_asset ${batch.map((s) => s.symbol).join(', ')} (cap ${assets.vault.stockCapShares} shares)`,
-        batch.map((s) => setAssetIx(admin, new PublicKey(s.mint), true, CAP_RAW)),
+        `set_asset ${batch.map((s) => s.symbol).join(', ')} (cap $${CAP_USD} each)`,
+        batch.map((s) => setAssetIx(admin, new PublicKey(s.mint), true, caps[s.symbol])),
         send,
       )
     }

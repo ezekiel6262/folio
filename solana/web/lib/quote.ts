@@ -1,5 +1,6 @@
 import 'server-only'
 import { stablecoin, stock, toShares } from './assets'
+import { transferFee, transferFeeBps } from './transfer-fee'
 import type { Market } from './market'
 
 /**
@@ -44,6 +45,11 @@ export type Leg = {
   fillShareUsd: number
   marketShareUsd: number
   gapPct: number
+  /** Private-company tokens: what the issuer reports it is worth, and the premium paid over it. */
+  referenceUsd?: number
+  premiumPct?: number
+  /** Issuer transfer fee withheld on the way into the vault, already taken out of `shares`. */
+  transferFeePct: number
   priceImpactPct: number
   venues: string[]
   quote: JupiterQuote
@@ -129,10 +135,22 @@ export async function planPurchase(args: {
       if (!m) throw new Error(`No market price for ${s.display} right now`)
       const quote = await jupiterQuote(pay.mint, s.mint, part.amount, slippageBps)
 
-      const tokensOut = Number(quote.outAmount) / 10 ** s.decimals
-      const minTokensOut = Number(quote.otherAmountThreshold) / 10 ** s.decimals
+      // What lands in the vault after any issuer transfer fee. Counting it here keeps the
+      // share count honest and the fill-vs-market comparison fair.
+      const outRaw = BigInt(quote.outAmount)
+      const minRaw = BigInt(quote.otherAmountThreshold)
+      const [feeOut, feeMin, feeBps] = await Promise.all([
+        transferFee(s.mint, outRaw),
+        transferFee(s.mint, minRaw),
+        transferFeeBps(s.mint),
+      ])
+      const landed = outRaw - feeOut
+      const landedMin = minRaw - feeMin
+
+      const tokensOut = Number(landed) / 10 ** s.decimals
+      const minTokensOut = Number(landedMin) / 10 ** s.decimals
       const legSpendUsd = (Number(part.amount) / 10 ** pay.decimals) * payUsd
-      const shares = toShares(quote.outAmount, s.decimals, m.multiplier)
+      const shares = toShares(landed, s.decimals, m.multiplier)
       const fillShareUsd = shares > 0 ? legSpendUsd / shares : 0
 
       return {
@@ -144,10 +162,13 @@ export async function planPurchase(args: {
         tokensOut,
         minTokensOut,
         shares,
-        minShares: toShares(quote.otherAmountThreshold, s.decimals, m.multiplier),
+        minShares: toShares(landedMin, s.decimals, m.multiplier),
         fillShareUsd,
         marketShareUsd: m.shareUsd,
         gapPct: m.shareUsd > 0 ? ((fillShareUsd - m.shareUsd) / m.shareUsd) * 100 : 0,
+        referenceUsd: m.referenceUsd,
+        premiumPct: m.referenceUsd ? (fillShareUsd / m.referenceUsd - 1) * 100 : undefined,
+        transferFeePct: feeBps / 100,
         priceImpactPct: Number(quote.priceImpactPct) * 100,
         venues: [...new Set(quote.routePlan.map((h) => h.swapInfo.label))],
         quote,
@@ -159,6 +180,13 @@ export async function planPurchase(args: {
     if (Math.abs(leg.gapPct) > 2.5) {
       warnings.push(
         `${leg.display} is filling ${Math.abs(leg.gapPct).toFixed(1)}% ${leg.gapPct > 0 ? 'above' : 'below'} the market price — that pool is thin at this size.`,
+      )
+    }
+  }
+  for (const leg of legs) {
+    if (leg.transferFeePct > 0) {
+      warnings.push(
+        `${leg.display} carries a ${leg.transferFeePct}% issuer fee on every transfer — it is already taken out of the shares shown, and applies again when you sell.`,
       )
     }
   }

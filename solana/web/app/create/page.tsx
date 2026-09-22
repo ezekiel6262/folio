@@ -40,7 +40,13 @@ export default function CreatePage() {
   const [progress, setProgress] = useState<Progress | null>(null)
   // Set when adding to a folio the user already owns: no naming or gift step.
   const [topUp, setTopUp] = useState<string | null>(null)
-  useEffect(() => setTopUp(new URLSearchParams(window.location.search).get('folio')), [])
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    setTopUp(q.get('folio'))
+    // Arriving from Markets or a shared link: start with that company already written in.
+    const preset = q.get('prompt')
+    if (preset) setPrompt(preset.slice(0, 200))
+  }, [])
 
   const balances = useQuery<WalletBalances>({
     queryKey: ['balances', wallet.address],

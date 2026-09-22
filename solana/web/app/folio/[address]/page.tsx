@@ -101,9 +101,9 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
   return (
     <>
       <AppHeader />
-      <Screen>
+      <Screen wide>
         {created && (
-          <div className="-mx-5 -mt-7 mb-7 bg-ink-void px-5 py-4">
+          <div className="-mx-5 -mt-7 mb-7 bg-ink-void px-5 py-4 lg:mx-0 lg:mt-0">
             <p className="font-sans text-[13px] leading-[1.55] text-body-dark">
               <span className="text-accent-dark">Done.</span> You own {folio.holdings.map((h) => h.display).join(' and ')}, in your own name.
             </p>
@@ -128,6 +128,8 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
           {!folio.locked && !folio.escrowed && <StatusChip tone="mute">No lock</StatusChip>}
         </div>
 
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
+        <div>
         <HardRule className="mt-7" />
         <p className="t-label mt-5">What is inside</p>
         <div className="mt-3">
@@ -195,8 +197,11 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
           </div>
         )}
 
+        </div>
+
+        <div>
         {/* Proof: anyone can check this without taking Folio's word for it. */}
-        <div className="mt-9 border-2 border-ink">
+        <div className="mt-9 border-2 border-ink lg:mt-7">
           <div className="h-1.5 bg-accent" />
           <div className="p-4">
             <Kicker>Custody receipt</Kicker>
@@ -233,6 +238,8 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
         <MonoLabel className="mt-6">
           Share counts are share-equivalents, adjusted for dividends and splits.
         </MonoLabel>
+        </div>
+        </div>
 
         <Link href="/" className="btn-ghost mt-8 block text-center no-underline">
           Back
