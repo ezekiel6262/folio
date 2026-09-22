@@ -12,7 +12,8 @@ HERE="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 export PATH="$HOME/.local/bin:$HOME/.local/share/solana/install/active_release/bin:$PATH"
 
-[ -f "$ROOT/.env.solana" ] && set -a && . "$ROOT/.env.solana" && set +a
+# Strip Windows line endings: the file is usually edited on Windows.
+[ -f "$ROOT/.env.solana" ] && set -a && . <(tr -d '\r' < "$ROOT/.env.solana") && set +a
 RPC="${SOLANA_RPC_URL:-}"
 [ -n "${HELIUS_API_KEY:-}" ] && RPC="https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}"
 [ -z "$RPC" ] && { echo "Set HELIUS_API_KEY (or SOLANA_RPC_URL) in .env.solana — public mainnet RPC rate-limits deploys."; exit 1; }
