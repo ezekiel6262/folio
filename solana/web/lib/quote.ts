@@ -68,14 +68,14 @@ export type PurchasePlan = {
   warnings: string[]
 }
 
-export async function jupiterQuote(inputMint: string, outputMint: string, amount: bigint, slippageBps: number) {
+export async function jupiterQuote(inputMint: string, outputMint: string, amount: bigint, slippageBps: number, maxAccounts = 32) {
   const params = new URLSearchParams({
     inputMint,
     outputMint,
     amount: amount.toString(),
     slippageBps: String(slippageBps),
     // Keep routes compact so a three-company basket still fits one transaction.
-    maxAccounts: '32',
+    maxAccounts: String(maxAccounts),
   })
   let lastError = 'no route'
   for (const base of JUPITER) {
@@ -108,6 +108,8 @@ export async function planPurchase(args: {
   weights: { symbol: string; weightBps: number }[]
   market: Market
   slippageBps?: number
+  /** Fewer accounts per route means a smaller transaction, sometimes at a slightly worse price. */
+  maxAccounts?: number
 }): Promise<PurchasePlan> {
   const { displayCode, amountLocal, weights, market } = args
   const slippageBps = args.slippageBps ?? DEFAULT_SLIPPAGE_BPS
@@ -133,7 +135,7 @@ export async function planPurchase(args: {
       const s = stock(part.symbol)
       const m = market.stocks[s.symbol]
       if (!m) throw new Error(`No market price for ${s.display} right now`)
-      const quote = await jupiterQuote(pay.mint, s.mint, part.amount, slippageBps)
+      const quote = await jupiterQuote(pay.mint, s.mint, part.amount, slippageBps, args.maxAccounts)
 
       // What lands in the vault after any issuer transfer fee. Counting it here keeps the
       // share count honest and the fill-vs-market comparison fair.

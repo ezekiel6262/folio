@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
 import { dateLabel, lockLabel } from '@/components/folio-row'
 import { SellSheet } from '@/components/sell-sheet'
+import { ShareBasket } from '@/components/share-basket'
 import { ShareLink } from '@/components/share-link'
 import { AppHeader, HardRule, Kicker, MonoLabel, Screen, SideNote, Spinner, StatusChip, Stop } from '@/components/ui'
 import { formatShares } from '@/lib/assets'
@@ -163,6 +164,8 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
             Add to this folio
           </Link>
         )}
+
+        {folio.holdings.length > 0 && <ShareBasket folio={folio.address} />}
 
         {isSender && (
           <div className="mt-7 border border-rule-mid p-4">

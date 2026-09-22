@@ -62,13 +62,18 @@ export const toIx = (i: JupIx) =>
   })
 
 /** Without a destination, the output goes to the user's own account for that token. */
-export async function swapInstructions(quote: Leg['quote'], user: PublicKey, destination?: PublicKey): Promise<SwapInstructions> {
+export async function swapInstructions(
+  quote: Leg['quote'],
+  user: PublicKey,
+  destination?: PublicKey,
+  payer: string = FEE_PAYER,
+): Promise<SwapInstructions> {
   const body = JSON.stringify({
     quoteResponse: quote,
     userPublicKey: user.toBase58(),
     // Our fee payer funds any account Jupiter opens (verified: it appears only as the
     // funder of an associated-token-account creation, never inside the swap itself).
-    payer: FEE_PAYER,
+    payer,
     ...(destination ? { destinationTokenAccount: destination.toBase58() } : {}),
     wrapAndUnwrapSol: false,
     dynamicComputeUnitLimit: true,
@@ -105,10 +110,21 @@ export async function lookupTables(addresses: string[]): Promise<AddressLookupTa
   return tables.filter((t): t is AddressLookupTableAccount => Boolean(t))
 }
 
-export function compile(instructions: TransactionInstruction[], blockhash: string, tables: AddressLookupTableAccount[]) {
-  const message = new TransactionMessage({ payerKey: feePayer, recentBlockhash: blockhash, instructions }).compileToV0Message(tables)
+export function compile(
+  instructions: TransactionInstruction[],
+  blockhash: string,
+  tables: AddressLookupTableAccount[],
+  payerKey: PublicKey = feePayer,
+) {
+  const message = new TransactionMessage({ payerKey, recentBlockhash: blockhash, instructions }).compileToV0Message(tables)
   const tx = new VersionedTransaction(message)
-  const bytes = tx.serialize()
+  let bytes: Uint8Array
+  try {
+    bytes = tx.serialize()
+  } catch {
+    // web3.js refuses to serialize past the packet limit; report it as too big instead.
+    return { tx, size: Number.POSITIVE_INFINITY, base64: '' }
+  }
   return { tx, size: bytes.length, base64: Buffer.from(bytes).toString('base64') }
 }
 
@@ -143,8 +159,14 @@ export async function buildPurchase(args: {
   user: string
   legs: Leg[]
   folio: NewFolio | { kind: 'existing'; address: string }
+  /**
+   * The user's own wallet pays fees and deposits (Blinks: any wallet, no co-signer). Deposits
+   * then refund to the user, since the folio records them as its rent payer.
+   */
+  selfPaid?: boolean
 }): Promise<BuiltPurchase> {
   const user = new PublicKey(args.user)
+  const payer = args.selfPaid ? user : feePayer
 
   let folio: PublicKey
   let nonce: bigint | null = null
@@ -160,7 +182,7 @@ export async function buildPurchase(args: {
           : user // keeping it
     createIx = createFolioIx({
       creator: user,
-      payer: feePayer,
+      payer,
       nonce,
       name: args.folio.name,
       unlockAt: args.folio.unlockAt,
@@ -181,9 +203,9 @@ export async function buildPurchase(args: {
     const s = stock(leg.symbol)
     const mint = new PublicKey(s.mint)
     const vault = ata(folio, mint, TOKEN_2022)
-    const jup = await swapInstructions(leg.quote, user, vault)
+    const jup = await swapInstructions(leg.quote, user, vault, payer.toBase58())
 
-    purchase.push(createAtaIdempotentIx({ payer: feePayer, owner: folio, mint, tokenProgram: TOKEN_2022 }))
+    purchase.push(createAtaIdempotentIx({ payer, owner: folio, mint, tokenProgram: TOKEN_2022 }))
     for (const setup of jup.setupInstructions ?? []) {
       if (!isBuyersOutputAccount(setup, user, s.mint)) purchase.push(toIx(setup))
     }
@@ -199,7 +221,7 @@ export async function buildPurchase(args: {
 
   // Prefer one transaction: creation and purchase together, all or nothing.
   if (createIx) {
-    const single = compile([...budget(units + CU_CREATE_FOLIO + 20_000), createIx, ...purchase], latest.blockhash, tables)
+    const single = compile([...budget(units + CU_CREATE_FOLIO + 20_000), createIx, ...purchase], latest.blockhash, tables, payer)
     if (single.size <= MAX_TX_BYTES) {
       return {
         transactions: [single.base64],
@@ -212,14 +234,18 @@ export async function buildPurchase(args: {
     }
   }
 
-  const buy = compile([...budget(units + 20_000), ...purchase], latest.blockhash, tables)
+  const buy = compile([...budget(units + 20_000), ...purchase], latest.blockhash, tables, payer)
   if (buy.size > MAX_TX_BYTES) {
-    throw new Error(`This basket needs ${buy.size} bytes and one transaction holds ${MAX_TX_BYTES}. Try fewer companies.`)
+    throw new Error(
+      Number.isFinite(buy.size)
+        ? `This basket needs ${buy.size} bytes and one transaction holds ${MAX_TX_BYTES}. Try fewer companies.`
+        : 'These trading routes are too large for one transaction right now. Try fewer companies.',
+    )
   }
   const transactions = [buy.base64]
   const sizes = [buy.size]
   if (createIx) {
-    const create = compile([...budget(CU_CREATE_FOLIO + 10_000), createIx], latest.blockhash, [])
+    const create = compile([...budget(CU_CREATE_FOLIO + 10_000), createIx], latest.blockhash, [], payer)
     transactions.unshift(create.base64)
     sizes.unshift(create.size)
   }
