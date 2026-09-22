@@ -164,6 +164,8 @@ export async function buildPurchase(args: {
    * then refund to the user, since the folio records them as its rent payer.
    */
   selfPaid?: boolean
+  /** Fix a new folio's nonce (and so its address) in advance. */
+  nonce?: bigint
 }): Promise<BuiltPurchase> {
   const user = new PublicKey(args.user)
   const payer = args.selfPaid ? user : feePayer
@@ -172,7 +174,7 @@ export async function buildPurchase(args: {
   let nonce: bigint | null = null
   let createIx: TransactionInstruction | null = null
   if (args.folio.kind === 'new') {
-    nonce = newNonce()
+    nonce = args.nonce ?? newNonce()
     folio = folioPda(user, nonce)
     const recipient =
       args.folio.recipient != null

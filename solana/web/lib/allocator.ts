@@ -117,6 +117,16 @@ const THEMES: Record<string, string[]> = {
   brain: ['biotech'],
 }
 
+/** How a matched theme reads back to the user. */
+const THEME_WORDS: Record<string, string> = {
+  private: 'pre-IPO companies',
+  ai: 'AI',
+  ev: 'electric vehicles',
+  ads: 'advertising',
+  'large-cap': 'the biggest companies',
+  prediction: 'prediction markets',
+}
+
 /** How people actually refer to these. Normalised the same way the prompt is. */
 const RAW_ALIASES: Record<string, string> = {
   apple: 'AAPLx',
@@ -397,7 +407,7 @@ function describe(
       : mode === 'default'
         ? `Nothing specific matched, so this is a broad start: ${list}.`
         : themes.size
-          ? `Built around ${[...themes].join(', ')}: ${list}.`
+          ? `Built around ${[...themes].map((t) => THEME_WORDS[t] ?? t).join(', ')}: ${list}.`
           : `A ${tilt} basket: ${list}.`
   if (mode === 'themed' && themes.size && tilt !== 'balanced') s += ` Weighted toward ${tilt}.`
   if (truncated) s += ` Folio buys up to ${MAX_COMPANIES} companies at a time, so it kept the strongest ${MAX_COMPANIES}.`

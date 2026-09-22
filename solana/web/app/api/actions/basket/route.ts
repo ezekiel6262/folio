@@ -1,10 +1,8 @@
 import { PublicKey } from '@solana/web3.js'
-import { ACTIONS_HEADERS, basketFrom, basketPolicy, type Basket } from '@/lib/actions'
+import { ACTIONS_HEADERS, basketFrom, basketPolicy } from '@/lib/actions'
 import { STOCK_BY_SYMBOL } from '@/lib/assets'
-import { buildPurchase } from '@/lib/buy'
 import { isBlocked } from '@/lib/eligibility'
-import { getMarket } from '@/lib/market'
-import { planPurchase, type PurchasePlan } from '@/lib/quote'
+import { buildStep } from '@/lib/steps'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,10 +95,19 @@ export async function POST(req: Request) {
     const legUsd = (amount * leg.weightBps) / 10_000
     if (legUsd < MIN_USD) return fail(`Each company needs at least $${MIN_USD}; raise the amount`)
 
-    const built = await buildStep({ account, basket, step, target, symbol: leg.symbol, usd: legUsd })
+    const { hash } = basketPolicy(basket)
+    const built = await buildStep({
+      owner: account,
+      symbol: leg.symbol,
+      usd: legUsd,
+      folio:
+        step === 0
+          ? { kind: 'new', name: basket.name, unlockAt: 0, reclaimAfter: 0, claimKey: null, recipient: null, policyHashHex: hash }
+          : { kind: 'existing', address: target! },
+    })
     const folio = built.folio
     const last = step === basket.weights.length - 1
-    const shares = built.plan.legs[0]?.shares ?? 0
+    const shares = built.shares
 
     return json({
       type: 'transaction',
@@ -116,38 +123,4 @@ export async function POST(req: Request) {
   } catch (e) {
     return fail((e as Error).message)
   }
-}
-
-async function buildStep(a: { account: PublicKey; basket: Basket; step: number; target: string | null; symbol: string; usd: number }) {
-  const market = await getMarket()
-  const { hash } = basketPolicy(a.basket)
-  const folio =
-    a.step === 0
-      ? ({ kind: 'new', name: a.basket.name, unlockAt: 0, reclaimAfter: 0, claimKey: null, recipient: null, policyHashHex: hash } as const)
-      : ({ kind: 'existing', address: a.target! } as const)
-
-  let lastError = 'No route for that company right now'
-  // Compact routes first only if the normal one does not fit.
-  for (const maxAccounts of [32, 24, 18]) {
-    let plan: PurchasePlan
-    try {
-      plan = await planPurchase({
-        displayCode: 'USD',
-        amountLocal: a.usd,
-        payWith: 'USDC',
-        weights: [{ symbol: a.symbol, weightBps: 10_000 }],
-        market,
-        maxAccounts,
-      })
-    } catch (e) {
-      lastError = (e as Error).message
-      continue
-    }
-    const built = await buildPurchase({ user: a.account.toBase58(), legs: plan.legs, selfPaid: true, folio }).catch((e: Error) => {
-      lastError = e.message
-      return null
-    })
-    if (built?.transactions.length === 1) return { transaction: built.transactions[0], folio: built.folio, plan }
-  }
-  throw new Error(lastError)
 }

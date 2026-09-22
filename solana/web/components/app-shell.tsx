@@ -12,6 +12,7 @@ const NAV = [
   { href: '/create', label: 'New folio', mark: '03' },
   { href: '/deposit', label: 'Add money', mark: '04' },
   { href: '/withdraw', label: 'Send out', mark: '05' },
+  { href: '/developers', label: 'Developers & agents', mark: '06' },
 ]
 
 /**
