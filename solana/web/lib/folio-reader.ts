@@ -20,6 +20,8 @@ export type Holding = {
   rawAmount: string
   shares: number
   shareUsd: number
+  /** Percent of this holding that came from reinvested dividends or a split. */
+  growthPct: number
   valueUsd: number
   weightPct: number
 }
@@ -69,6 +71,7 @@ async function withHoldings(folios: FolioAccount[]): Promise<FolioView[]> {
             rawAmount: raw,
             shares,
             shareUsd,
+            growthPct: m?.growthPct ?? 0,
             valueUsd: shares * shareUsd,
             weightPct: 0,
           }

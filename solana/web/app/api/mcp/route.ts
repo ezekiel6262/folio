@@ -130,6 +130,8 @@ async function callTool(name: string, args: Json, req: Request, origin: string):
         price_usd: m.stocks[s.symbol]?.shareUsd ?? null,
         reference_usd: m.stocks[s.symbol]?.referenceUsd ?? null,
         premium_pct: m.stocks[s.symbol]?.premiumPct ?? null,
+        // Dividends are reinvested into the token rather than paid as cash.
+        reinvested_growth_pct: m.stocks[s.symbol]?.growthPct ?? null,
         last_valuation_usd: m.valuations[s.symbol]?.markValuation ?? null,
       }))
     }

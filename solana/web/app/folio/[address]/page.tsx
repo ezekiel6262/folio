@@ -146,6 +146,13 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
                 </span>
                 <span className="figure text-[10px] text-body-mute">{h.weightPct.toFixed(0)}%</span>
               </div>
+              {h.growthPct > 0.005 && (
+                <p className="figure mt-1 text-[10.5px] text-accent">
+                  {h.growthPct < 5
+                    ? `+${h.growthPct.toFixed(2)}% of these shares came from reinvested dividends`
+                    : `includes a ${(1 + h.growthPct / 100).toFixed(2)}× split by the issuer`}
+                </p>
+              )}
               {canSell && selling !== h.symbol && (
                 <button
                   onClick={() => setSelling(h.symbol)}
@@ -228,6 +235,16 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
               Open on Solscan ↗
             </a>
           </div>
+        </div>
+
+        <div className="mt-7 border border-rule-mid p-4">
+          <MonoLabel>Dividends and company actions</MonoLabel>
+          <p className="t-body-sm mt-2">
+            Dividends are not paid out as cash — the issuer reinvests them, and your share count
+            grows instead. Splits work the same way. Both are applied to every number on this page as
+            soon as they happen, so a holding never quietly changes meaning. These tokens carry no
+            voting rights, and private companies pay no dividends.
+          </p>
         </div>
 
         <div className="mt-6">

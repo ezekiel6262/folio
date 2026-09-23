@@ -9,7 +9,7 @@ import { STOCKS, type Stock } from '@/lib/assets'
 import { formatLocal } from '@/lib/currencies'
 
 type MarketResponse = {
-  stocks: Record<string, { shareUsd: number; referenceUsd?: number; premiumPct?: number }>
+  stocks: Record<string, { shareUsd: number; referenceUsd?: number; premiumPct?: number; growthPct?: number }>
   valuations: Record<string, { markValuation: number; impliedValuation: number; markPrice: number }>
   lending: Record<string, { maxLtv: number; borrowApy: number }>
 }
@@ -158,8 +158,10 @@ export default function MarketsPage() {
         <div className="mt-8 max-w-[680px]">
           <SideNote>
             Listed companies are xStocks by Backed; private ones are PreStocks, backed 1:1 by exposure through a
-            special-purpose vehicle and carrying a 1% fee on every transfer. Both issuers can freeze, pause or move
-            tokens. Borrowing terms come from the Kamino lending market and can change.
+            special-purpose vehicle and carrying a 1% fee on every transfer. Dividends are reinvested into the token —
+            your share count grows rather than cash arriving — and splits are applied the same way. Neither carries
+            voting rights. Both issuers can freeze, pause or move tokens. Borrowing terms come from the Kamino lending
+            market and can change.
           </SideNote>
         </div>
       </Screen>
@@ -210,6 +212,7 @@ function Row({
         </span>
         <span className="figure mt-0.5 block text-[10.5px] text-body-mute">
           {privateCo && v ? `valued ${compactUsd(v.markValuation)} at its last round` : stock.sector.replace(/-/g, ' ')}
+          {!privateCo && (m?.growthPct ?? 0) > 0.005 && ` · dividends +${m!.growthPct!.toFixed(2)}% so far`}
         </span>
       </span>
 

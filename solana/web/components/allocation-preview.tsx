@@ -84,6 +84,10 @@ export function AllocationPreview({ allocation, plan }: { allocation: Allocation
                   />
                 )}
                 {leg.transferFeePct > 0 && <Detail label="Issuer transfer fee" value={`${leg.transferFeePct}% · already deducted`} />}
+                <Detail
+                  label="Dividends"
+                  value={STOCK_BY_SYMBOL.get(leg.symbol)?.kind === 'private' ? 'None — private company' : 'Reinvested into more shares'}
+                />
                 <div className="mt-2 border-t border-rule-hair pt-2">
                   <Detail label="Guaranteed worst case" value={`${formatShares(leg.minShares)} sh`} />
                 </div>

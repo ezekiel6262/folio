@@ -43,6 +43,13 @@ export type StockMarket = {
   /** Market price against the reference: +13 means buyers pay 13% above it. */
   premiumPct?: number
   multiplier: number
+  /**
+   * How much a token has grown since it was issued, in percent. xStocks reinvest dividends
+   * by raising the multiplier rather than paying cash, so this is the dividend a holder has
+   * already received. A split moves it too (SpaceX went to 5x), which is why the label
+   * depends on the size.
+   */
+  growthPct: number
   /** A multiplier change the issuer has scheduled but not yet reached. */
   scheduled?: { multiplier: number; effectiveAt: number }
 }
@@ -183,6 +190,7 @@ export async function getMarket(): Promise<Market> {
       symbol: s.symbol,
       tokenUsd: price.usd,
       shareUsd: price.usd,
+      growthPct: (multiplier - 1) * 100,
       referenceUsd: ref?.usd,
       referenceSource: ref?.source,
       premiumPct: ref ? (price.usd / ref.usd - 1) * 100 : undefined,
