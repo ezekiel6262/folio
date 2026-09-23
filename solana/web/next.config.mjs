@@ -11,13 +11,10 @@ const nextConfig = {
   reactStrictMode: true,
   // The Kamino lending SDK ships WebAssembly through its liquidity dependency; bundling it
   // loses the .wasm file, so it is loaded from node_modules at runtime instead.
-  serverExternalPackages: [
-    '@kamino-finance/klend-sdk',
-    '@kamino-finance/kliquidity-sdk',
-    '@kamino-finance/scope-sdk',
-    '@kamino-finance/farms-sdk',
-    '@orca-so/whirlpools-core',
-  ],
+  // Only the WebAssembly-bearing package is left unbundled (bundling loses the .wasm).
+  // The lending SDK itself must stay bundled: unbundled, Node hits a CommonJS/ESM clash
+  // inside anchor's rpc-websockets dependency on Vercel.
+  serverExternalPackages: ['@kamino-finance/kliquidity-sdk', '@orca-so/whirlpools-core'],
   // Several lockfiles live above this directory; pin tracing to the app itself.
   outputFileTracingRoot: import.meta.dirname,
   webpack: (config, { isServer }) => {
