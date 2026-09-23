@@ -38,6 +38,7 @@ export default function DemoPage() {
   const [lock, setLock] = useState(0)
   const [gift, setGift] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [funding, setFunding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const demo = useQuery<DemoData>({
@@ -48,6 +49,26 @@ export default function DemoPage() {
 
   const holdings = demo.data?.holdings ?? []
   const picks = holdings.filter((h) => chosen[h.symbol])
+
+  async function getShares() {
+    if (!wallet.address) return
+    setError(null)
+    setFunding(true)
+    try {
+      const res = await fetch('/api/demo/fund', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ owner: wallet.address }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Could not hand out test shares')
+      await demo.refetch()
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setFunding(false)
+    }
+  }
 
   async function create() {
     if (!picks.length || !wallet.address) return
@@ -144,11 +165,12 @@ export default function DemoPage() {
                   </button>
                 ))
               ) : (
-                <p className="t-body-sm mt-3">
-                  This wallet has no test shares yet. Ask for a top-up with your address:{' '}
-                  <span className="figure break-all text-[11px]">{wallet.address}</span>
-                </p>
+                <p className="t-body-sm mt-3">This wallet has no test shares yet.</p>
               )}
+
+              <button onClick={getShares} disabled={funding} className="btn-secondary mt-4 !min-h-[44px]">
+                {funding ? 'Handing them over…' : holdings.length ? 'Get more test shares' : 'Get test shares'}
+              </button>
             </div>
 
             <div className="mt-10 lg:mt-0">
