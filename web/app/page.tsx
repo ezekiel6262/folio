@@ -51,10 +51,6 @@ function Door() {
         Describe a portfolio in a sentence. Keep it, lock it until a date, or hand it to someone you
         love.
       </p>
-      <p className="t-disclaimer mt-3">
-        On X Layer the same envelope can hold tokenized stocks, US Treasuries, and a capped meme pair.{" "}
-        <Link href="/xlayer">Build that folio</Link>
-      </p>
 
       <div className="mt-7">
         <ConnectButton full />
