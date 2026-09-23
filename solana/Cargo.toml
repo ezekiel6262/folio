@@ -2,10 +2,15 @@
 members = ["programs/*"]
 resolver = "2"
 
+# Rent is charged per byte, so the binary is optimised for size, not speed: a smaller
+# program costs less to put on mainnet and to keep there.
 [profile.release]
 overflow-checks = true
+opt-level = "z"
 lto = "fat"
 codegen-units = 1
+panic = "abort"
+strip = true
 
 [profile.release.build-override]
 opt-level = 3

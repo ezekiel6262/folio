@@ -16,9 +16,12 @@ import { lendingTerms, type LendingTerms } from './lending'
  * extension, including a scheduled change once its effective time passes.
  */
 
+/** Mainnet unless the app is explicitly run against the demo cluster. */
+const CLUSTER = process.env.NEXT_PUBLIC_CLUSTER === 'devnet' ? 'devnet' : 'mainnet'
+
 export const RPC_URL = process.env.HELIUS_API_KEY
-  ? `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`
-  : process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
+  ? `https://${CLUSTER === 'devnet' ? 'devnet' : 'mainnet'}.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`
+  : process.env.SOLANA_RPC_URL || (CLUSTER === 'devnet' ? 'https://api.devnet.solana.com' : 'https://api.mainnet-beta.solana.com')
 
 export const connection = new Connection(RPC_URL, 'confirmed')
 
