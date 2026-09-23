@@ -9,6 +9,7 @@ const TOOLS: [string, string][] = [
   ['build_buy_transactions', "Unsigned transactions that buy the basket into a new folio owned by the agent's wallet."],
   ['get_portfolio', "A wallet's folios, holdings and gifts waiting to be claimed."],
   ['get_folio', 'One folio: owner, lock, holdings.'],
+  ['get_yields', 'What cash earns, and what each company can back a loan for.'],
   ['make_buy_link', 'A Blink and web link anyone can use to buy the same basket.'],
 ]
 
@@ -71,7 +72,9 @@ export default function DevelopersPage() {
             <HardRule className="mt-2.5" />
             <div className="mt-2">
               {[
-                ['GET /api/market', 'prices, reference prices, premiums, FX'],
+                ['GET /api/market', 'prices, reference prices, premiums, FX, lending terms'],
+                ['GET /api/earn', 'what each stablecoin pays, and a wallet’s earning positions'],
+                ['GET /api/borrow?folio=&owner=', 'what a folio can back a loan with, and the wallet’s loan'],
                 ['POST /api/allocate', '{ prompt } → basket'],
                 ['POST /api/plan', '{ displayCode, amountLocal, payWith, weights } → quote'],
                 ['GET /api/folio/:address', 'one folio'],

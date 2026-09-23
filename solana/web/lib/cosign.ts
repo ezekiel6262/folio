@@ -46,6 +46,10 @@ const ALLOWED_PROGRAMS = new Set([
   P.token,
   P.token2022,
   P.associatedToken,
+  // Jupiter Lend: earning on idle stablecoins, sponsored like everything else.
+  P.jupiterLend,
+  // Kamino: posting a folio's shares as collateral and borrowing against them.
+  P.kaminoLend,
 ])
 
 /** Most a single sponsored transaction may cost us: fee + a folio + three vaults + a few user token accounts. */

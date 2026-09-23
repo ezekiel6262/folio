@@ -4,6 +4,8 @@ import { enforceAllowlist, rulesAllocator } from '@/lib/allocator'
 import { STOCKS, STOCK_BY_SYMBOL, type Stock } from '@/lib/assets'
 import { isBlocked } from '@/lib/eligibility'
 import { foliosOwnedBy, giftsWaitingFrom, readFolio } from '@/lib/folio-reader'
+import { earnTokens } from '@/lib/earn'
+import { lendingTerms } from '@/lib/lending'
 import { getMarket } from '@/lib/market'
 import { planPurchase } from '@/lib/quote'
 import { buildAllSteps } from '@/lib/steps'
@@ -78,6 +80,12 @@ const TOOLS = [
     name: 'get_folio',
     description: 'One folio: owner, lock, holdings in share-equivalents and USD.',
     inputSchema: { type: 'object', properties: { address: { type: 'string' } }, required: ['address'], additionalProperties: false },
+  },
+  {
+    name: 'get_yields',
+    description:
+      'What idle stablecoins earn through Jupiter Lend, and what each company can back a loan for on the Kamino xStocks market (max loan-to-value and borrow rate).',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
     name: 'make_buy_link',
@@ -189,6 +197,16 @@ async function callTool(name: string, args: Json, req: Request, origin: string):
         ...f,
         url: `${origin}/folio/${f.address}`,
         holdings: f.holdings.map((h) => ({ symbol: h.symbol, shares: h.shares, share_usd: h.shareUsd, value_usd: h.valueUsd })),
+      }
+    }
+    case 'get_yields': {
+      const [earn, lending] = await Promise.all([earnTokens(), lendingTerms()])
+      return {
+        cash: earn.map((t) => ({ symbol: t.symbol, apy_pct: t.apy, liquidity_usd: t.liquidityUsd })),
+        collateral: Object.values(lending)
+          .filter((t) => STOCK_BY_SYMBOL.has(t.symbol))
+          .map((t) => ({ symbol: t.symbol, max_loan_to_value: t.maxLtv, borrow_apy_pct: t.borrowApy })),
+        borrow_cost_usdc_apy_pct: lending.USDC?.borrowApy ?? null,
       }
     }
     case 'make_buy_link': {

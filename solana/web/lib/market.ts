@@ -2,6 +2,7 @@ import 'server-only'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { STABLECOINS, STOCKS } from './assets'
 import { DISPLAY_CODES } from './currencies'
+import { lendingTerms, type LendingTerms } from './lending'
 
 /**
  * Market data, with its limits stated.
@@ -15,7 +16,7 @@ import { DISPLAY_CODES } from './currencies'
  * extension, including a scheduled change once its effective time passes.
  */
 
-const RPC_URL = process.env.HELIUS_API_KEY
+export const RPC_URL = process.env.HELIUS_API_KEY
   ? `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`
   : process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
 
@@ -52,6 +53,8 @@ export type PrivateValuation = { markValuation: number; impliedValuation: number
 export type Market = {
   stocks: Record<string, StockMarket>
   valuations: Record<string, PrivateValuation>
+  /** Borrowing terms where a lending market accepts the asset. */
+  lending: Record<string, LendingTerms>
   /** USD value of one unit of each stablecoin (EURC is not 1.00). */
   stablecoinUsd: Record<string, number>
   /** USD -> each display currency. */
@@ -162,11 +165,12 @@ async function preStocksValuations(): Promise<Record<string, PrivateValuation>> 
 export async function getMarket(): Promise<Market> {
   if (marketCache && Date.now() - marketCache.at < MARKET_TTL) return marketCache.value
 
-  const [prices, mults, fx, valuations] = await Promise.all([
+  const [prices, mults, fx, valuations, lending] = await Promise.all([
     jupiterPrices([...STOCKS.map((s) => s.mint), ...STABLECOINS.map((s) => s.mint)]),
     multipliers(),
     getFx(),
     preStocksValuations(),
+    lendingTerms(),
   ])
 
   const stocks: Record<string, StockMarket> = {}
@@ -193,7 +197,7 @@ export async function getMarket(): Promise<Market> {
     stablecoinUsd[c.symbol] = prices[c.mint]?.usd ?? (c.pegged === 'USD' ? 1 : 1 / (fx[c.pegged] ?? NaN))
   }
 
-  const value: Market = { stocks, valuations, stablecoinUsd, fx, asOf: Math.floor(Date.now() / 1000), source: 'jupiter' }
+  const value: Market = { stocks, valuations, lending, stablecoinUsd, fx, asOf: Math.floor(Date.now() / 1000), source: 'jupiter' }
   marketCache = { at: Date.now(), value }
   return value
 }

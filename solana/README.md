@@ -18,6 +18,8 @@ never needs SOL.
 | Hold | Value in NGN, BRL, INR, EUR… | Vault balances × live Token-2022 multiplier × Jupiter price. |
 | Sell | "Sell half for ₦…" | Withdraw from the vault and swap to USDC in one transaction. |
 | Send out | An address and an amount | A stablecoin transfer, fee paid by Folio. |
+| Earn | "Your cash earns 4.4% while it waits" | Idle stablecoins are lent through Jupiter Lend; the receipt stays in the user's wallet. |
+| Borrow | "Get cash without selling" | Shares leave the vault, back a loan on Kamino's xStocks market, and USDC comes back. |
 | Give | A name, a date, a link | The folio is escrowed; whoever opens the link claims it. |
 
 ## How it is built

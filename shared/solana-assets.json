@@ -9,7 +9,9 @@
     "associatedToken": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
     "system": "11111111111111111111111111111111",
     "computeBudget": "ComputeBudget111111111111111111111111111111",
-    "jupiterV6": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+    "jupiterV6": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+    "jupiterLend": "jup3YeL8QhtSx1e253b2FDvsMNC87fDrgQZivbrndc9",
+    "kaminoLend": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
   },
   "keys": {
     "_comment": "Public addresses only. The secrets live in solana/.keys (gitignored); only the fee payer ever goes to a server.",

@@ -9,6 +9,15 @@ if (existsSync(rootEnv)) process.loadEnvFile(rootEnv)
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // The Kamino lending SDK ships WebAssembly through its liquidity dependency; bundling it
+  // loses the .wasm file, so it is loaded from node_modules at runtime instead.
+  serverExternalPackages: [
+    '@kamino-finance/klend-sdk',
+    '@kamino-finance/kliquidity-sdk',
+    '@kamino-finance/scope-sdk',
+    '@kamino-finance/farms-sdk',
+    '@orca-so/whirlpools-core',
+  ],
   // Several lockfiles live above this directory; pin tracing to the app itself.
   outputFileTracingRoot: import.meta.dirname,
   webpack: (config, { isServer }) => {
