@@ -24,3 +24,7 @@ solana/programs/folio_vault/tests/fixtures/*.so
 solana/web/.next/
 solana/web/out/
 solana/web/next-env.d.ts
+
+# X Layer work from another session: local only, not part of Folio on Solana
+web/**/xlayer*
+web/lib/xlayer-*
