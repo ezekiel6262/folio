@@ -2,6 +2,7 @@ import 'server-only'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { STABLECOINS, STOCKS } from './assets'
 import { DISPLAY_CODES } from './currencies'
+import { demoMultipliers, isDemo } from './demo'
 import { lendingTerms, type LendingTerms } from './lending'
 
 /**
@@ -111,6 +112,10 @@ async function jupiterPrices(mints: string[]): Promise<Record<string, JupPrice>>
 type ScaledState = { multiplier?: string; newMultiplier?: string; newMultiplierEffectiveTimestamp?: number | string }
 
 async function multipliers(): Promise<Record<string, Pick<StockMarket, 'multiplier' | 'scheduled'>>> {
+  // The demo cluster has its own mints; their multipliers were fixed when they were made.
+  if (isDemo()) {
+    return Object.fromEntries(Object.entries(demoMultipliers()).map(([symbol, multiplier]) => [symbol, { multiplier }]))
+  }
   const infos = await connection.getMultipleParsedAccounts(STOCKS.map((s) => new PublicKey(s.mint)))
   const now = Math.floor(Date.now() / 1000)
   const out: Record<string, Pick<StockMarket, 'multiplier' | 'scheduled'>> = {}

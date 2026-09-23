@@ -1,6 +1,7 @@
 import 'server-only'
 import { PublicKey } from '@solana/web3.js'
-import { STOCK_BY_MINT, toShares } from './assets'
+import { STOCK_BY_MINT, STOCK_BY_SYMBOL, toShares } from './assets'
+import { demoSymbolForMint } from './demo'
 import { connection, getMarket } from './market'
 import { ata, decodeFolio, FOLIO_ACCOUNT_SIZE, PROGRAM_ID, TOKEN_2022, type FolioAccount } from './folio-program'
 
@@ -57,7 +58,8 @@ async function withHoldings(folios: FolioAccount[]): Promise<FolioView[]> {
         .map((v, i) => ({ v, info: infos.value[i] }))
         .filter(({ v }) => v.folio === f.address)
         .map(({ v, info }) => {
-          const s = STOCK_BY_MINT.get(v.mint)
+          const demoSymbol = demoSymbolForMint(v.mint)
+          const s = STOCK_BY_MINT.get(v.mint) ?? (demoSymbol ? STOCK_BY_SYMBOL.get(demoSymbol) : undefined)
           const m = s ? market.stocks[s.symbol] : undefined
           const data = info?.data
           const raw: string = data && 'parsed' in data ? (data.parsed?.info?.tokenAmount?.amount ?? '0') : '0'

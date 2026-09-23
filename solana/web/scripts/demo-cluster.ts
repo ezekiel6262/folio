@@ -5,6 +5,8 @@
  *   npm run demo -- status                 what exists so far
  *   npm run demo -- mints        [--send]  create stand-in stock and USDC mints
  *   npm run demo -- fund <addr>  [--send]  mint test tokens to a wallet
+ *   npm run demo -- allow        [--send]  initialise the program and allow the demo mints
+ *   npm run demo -- topup        [--send]  move test SOL to the fee payer
  *
  * The mints imitate the real ones: Token-2022, the same decimals, and a scaled-UI
  * multiplier so dividends and splits behave the way they do on mainnet. Their authority is
@@ -36,6 +38,16 @@ const RPC =
       ? `https://devnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`
       : 'https://api.devnet.solana.com'
 const connection = new Connection(RPC, 'confirmed')
+
+import { createHash } from 'node:crypto'
+
+const PROGRAM_ID = new PublicKey(assets.programs.folioVault)
+const FEE_PAYER = new PublicKey(assets.keys.feePayer)
+const disc = (name: string) => createHash('sha256').update(`global:${name}`).digest().subarray(0, 8)
+const configPda = PublicKey.findProgramAddressSync([Buffer.from('config')], PROGRAM_ID)[0]
+const assetPda = (mint: PublicKey) => PublicKey.findProgramAddressSync([Buffer.from('asset'), mint.toBuffer()], PROGRAM_ID)[0]
+/** Generous on a test network: nothing here is worth anything. */
+const DEMO_CAP_SHARES = 1_000
 
 const TOKEN_2022 = new PublicKey(assets.programs.token2022)
 const ATA_PROGRAM = new PublicKey(assets.programs.associatedToken)
@@ -170,12 +182,16 @@ async function mints(live: boolean) {
   const existing = load()
   if (existing && live) throw new Error(`${OUT} already exists; delete it to make new mints`)
 
-  const rent = await connection.getMinimumBalanceForRentExemption(MINT_LEN_BASE + 200)
+
   const out: DemoAssets = { cluster: CLUSTER, createdAt: new Date().toISOString(), usdc: '', stocks: [] }
 
   const make = async (label: string, decimals: number, multiplier: number | null) => {
     const mint = Keypair.generate()
-    const size = multiplier == null ? MINT_LEN_BASE : MINT_LEN_BASE + 83 // + scaled-UI extension
+    const rent = await connection.getMinimumBalanceForRentExemption(multiplier == null ? MINT_LEN_BASE : 226)
+    // Token-2022 pads a mint to the length of a token account (165) before any extension,
+    // then an account-type byte, a 4-byte TLV header and the 56-byte scaled-UI config
+    // (authority, multiplier, the next multiplier and when it takes effect).
+    const size = multiplier == null ? MINT_LEN_BASE : 165 + 1 + 4 + 56
     const ixs = [
       SystemProgram.createAccount({
         fromPubkey: kp.publicKey,
@@ -227,17 +243,77 @@ async function fund(target: string, live: boolean) {
   await send(`fund ${target.slice(0, 6)}… with ${FUND_USDC} demo USDC and ${FUND_SHARES} shares each of two companies`, ixs, [kp], live)
 }
 
+/** Same instructions as mainnet admin, pointed at the demo mints. */
+async function allow(live: boolean) {
+  const demo = load()
+  if (!demo) throw new Error('Run `mints --send` first')
+  const kp = deployer()
+  const ixs: TransactionInstruction[] = []
+
+  if (!(await connection.getAccountInfo(configPda))) {
+    ixs.push(
+      new TransactionInstruction({
+        programId: PROGRAM_ID,
+        keys: [
+          { pubkey: configPda, isSigner: false, isWritable: true },
+          { pubkey: kp.publicKey, isSigner: true, isWritable: true },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        ],
+        data: disc('initialize'),
+      }),
+    )
+  }
+
+  for (const s of demo.stocks) {
+    const mint = new PublicKey(s.mint)
+    const cap = BigInt(Math.round((DEMO_CAP_SHARES / s.multiplier) * 10 ** s.decimals))
+    const data = Buffer.alloc(17)
+    disc('set_asset').copy(data, 0)
+    data.writeUInt8(1, 8)
+    data.writeBigUInt64LE(cap, 9)
+    ixs.push(
+      new TransactionInstruction({
+        programId: PROGRAM_ID,
+        keys: [
+          { pubkey: configPda, isSigner: false, isWritable: false },
+          { pubkey: assetPda(mint), isSigner: false, isWritable: true },
+          { pubkey: mint, isSigner: false, isWritable: false },
+          { pubkey: kp.publicKey, isSigner: true, isWritable: true },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        ],
+        data,
+      }),
+    )
+  }
+  await send(`initialise and allow ${demo.stocks.map((s) => s.symbol).join(', ')}`, ixs, [kp], live)
+}
+
+/** The fee payer sponsors every demo transaction, so it needs test SOL of its own. */
+async function topup(live: boolean) {
+  const kp = deployer()
+  const have = await connection.getBalance(FEE_PAYER)
+  if (have > 0.4 * LAMPORTS_PER_SOL) return console.log(`fee payer already has ${(have / LAMPORTS_PER_SOL).toFixed(3)} SOL`)
+  await send(
+    `top up the fee payer to about 0.5 test SOL`,
+    [SystemProgram.transfer({ fromPubkey: kp.publicKey, toPubkey: FEE_PAYER, lamports: 0.5 * LAMPORTS_PER_SOL - have })],
+    [kp],
+    live,
+  )
+}
+
 async function main() {
   const args = process.argv.slice(2)
   const live = args.includes('--send')
   const [cmd = 'status', arg] = args.filter((a) => !a.startsWith('--'))
   if (cmd === 'status') return status()
   if (cmd === 'mints') return mints(live)
+  if (cmd === 'allow') return allow(live)
+  if (cmd === 'topup') return topup(live)
   if (cmd === 'fund') {
     if (!arg) throw new Error('Give the wallet address to fund')
     return fund(arg, live)
   }
-  console.log('usage: status | mints [--send] | fund <address> [--send]')
+  console.log('usage: status | mints | allow | topup | fund <address>  [--send]')
 }
 
 main().catch((e) => {

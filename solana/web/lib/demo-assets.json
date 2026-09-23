@@ -1,0 +1,35 @@
+{
+  "cluster": "devnet",
+  "createdAt": "2026-09-23T16:22:03.188Z",
+  "usdc": "82z3a8KqPrrjyyt5sVsdgH2TTDj28E24CDjy16wP8YCq",
+  "stocks": [
+    {
+      "symbol": "AAPLx",
+      "display": "Apple",
+      "mint": "GDLzXDZxTMGNiusk3iTc7ZcqFMnrQ1uYTAz1GvZ56aQf",
+      "decimals": 8,
+      "multiplier": 1.0032690125398187
+    },
+    {
+      "symbol": "NVDAx",
+      "display": "NVIDIA",
+      "mint": "83JkbKxp53nxeZNA7Jp8WbLLZgmX9USZN5hY53kfucpa",
+      "decimals": 8,
+      "multiplier": 1
+    },
+    {
+      "symbol": "SPYx",
+      "display": "S&P 500",
+      "mint": "AQ737TvYrpu4EhqC1C28gyaw8VqiaNnYQXseiubdgd6R",
+      "decimals": 8,
+      "multiplier": 1
+    },
+    {
+      "symbol": "SPACEX",
+      "display": "SpaceX",
+      "mint": "7W4SUmowndRSAMBhNj5FjoQ1v4xthXLuRNmWTfeNvUSd",
+      "decimals": 9,
+      "multiplier": 5
+    }
+  ]
+}

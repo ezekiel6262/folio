@@ -96,3 +96,13 @@ export async function buildDemoFolio(a: {
   const built = compile([...budget(60_000 + a.picks.length * 90_000), ...ixs], latest.blockhash, [])
   return { transaction: built.base64, folio: folio.toBase58(), lastValidBlockHeight: latest.lastValidBlockHeight }
 }
+
+/** Demo mint -> the company it stands in for, so holdings read the same as on mainnet. */
+export function demoSymbolForMint(mint: string): string | null {
+  return demoAssets()?.stocks.find((s) => s.mint === mint)?.symbol ?? null
+}
+
+/** The multiplier a demo mint was created with (Apple's dividend, SpaceX's split). */
+export function demoMultipliers(): Record<string, number> {
+  return Object.fromEntries((demoAssets()?.stocks ?? []).map((s) => [s.symbol, s.multiplier]))
+}
