@@ -58,16 +58,22 @@ function mintToIx(mint: PublicKey, destination: PublicKey, authority: PublicKey,
   })
 }
 
+/**
+ * The faucet key is a throwaway that can only mint worthless test tokens; the deployer key,
+ * which also controls program upgrades, never goes near a server.
+ */
+function minter(): Keypair {
+  const secret = process.env.FOLIO_DEMO_MINTER_SECRET
+  const json = secret ?? readFileSync(join(process.cwd(), '..', '.keys', 'demo-minter.json'), 'utf8')
+  return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(json)))
+}
+
 export async function POST(req: Request) {
-  if (!isDemo() || process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Test shares only exist on the demo cluster' }, { status: 400 })
-  }
+  if (!isDemo()) return NextResponse.json({ error: 'Test shares only exist on the demo cluster' }, { status: 400 })
   const demo = demoAssets()!
   try {
     const owner = new PublicKey(String((await req.json())?.owner))
-    const authority = Keypair.fromSecretKey(
-      Uint8Array.from(JSON.parse(readFileSync(join(process.cwd(), '..', '.keys', 'deployer.json'), 'utf8'))),
-    )
+    const authority = minter()
 
     const ixs: TransactionInstruction[] = [ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1_000 })]
     const usdc = new PublicKey(demo.usdc)

@@ -7,6 +7,7 @@
  *   npm run demo -- fund <addr>  [--send]  mint test tokens to a wallet
  *   npm run demo -- allow        [--send]  initialise the program and allow the demo mints
  *   npm run demo -- topup        [--send]  move test SOL to the fee payer
+ *   npm run demo -- minter       [--send]  hand minting to the demo-only faucet key
  *
  * The mints imitate the real ones: Token-2022, the same decimals, and a scaled-UI
  * multiplier so dividends and splits behave the way they do on mainnet. Their authority is
@@ -243,6 +244,47 @@ async function fund(target: string, live: boolean) {
   await send(`fund ${target.slice(0, 6)}… with ${FUND_USDC} demo USDC and ${FUND_SHARES} shares each of two companies`, ixs, [kp], live)
 }
 
+/**
+ * Moves minting to a throwaway key so a hosted demo can hand out test shares without the
+ * deployer key — which is also the program's upgrade authority — ever leaving this machine.
+ */
+async function minter(live: boolean) {
+  const demo = load()
+  if (!demo) throw new Error('Run `mints --send` first')
+  const kp = deployer()
+  const file = resolve(root, 'solana/.keys/demo-minter.json')
+  if (!existsSync(file)) throw new Error('No solana/.keys/demo-minter.json')
+  const to = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(file, 'utf8')))).publicKey
+
+  const setAuthority = (mint: PublicKey) => {
+    const data = Buffer.alloc(1 + 1 + 1 + 32)
+    data.writeUInt8(6, 0) // SetAuthority
+    data.writeUInt8(0, 1) // MintTokens
+    data.writeUInt8(1, 2) // Some(newAuthority)
+    to.toBuffer().copy(data, 3)
+    return new TransactionInstruction({
+      programId: TOKEN_2022,
+      keys: [
+        { pubkey: mint, isSigner: false, isWritable: true },
+        { pubkey: kp.publicKey, isSigner: true, isWritable: false },
+      ],
+      data,
+    })
+  }
+
+  const mints = [demo.usdc, ...demo.stocks.map((s) => s.mint)].map((m) => new PublicKey(m))
+  await send(`hand minting of ${mints.length} demo tokens to ${to.toBase58().slice(0, 8)}…`, mints.map(setAuthority), [kp], live)
+  const balance = await connection.getBalance(to)
+  if (balance < 0.05 * LAMPORTS_PER_SOL) {
+    await send(
+      'give the faucet key some test SOL for fees',
+      [SystemProgram.transfer({ fromPubkey: kp.publicKey, toPubkey: to, lamports: 0.2 * LAMPORTS_PER_SOL })],
+      [kp],
+      live,
+    )
+  }
+}
+
 /** Same instructions as mainnet admin, pointed at the demo mints. */
 async function allow(live: boolean) {
   const demo = load()
@@ -308,12 +350,13 @@ async function main() {
   if (cmd === 'status') return status()
   if (cmd === 'mints') return mints(live)
   if (cmd === 'allow') return allow(live)
+  if (cmd === 'minter') return minter(live)
   if (cmd === 'topup') return topup(live)
   if (cmd === 'fund') {
     if (!arg) throw new Error('Give the wallet address to fund')
     return fund(arg, live)
   }
-  console.log('usage: status | mints | allow | topup | fund <address>  [--send]')
+  console.log('usage: status | mints | allow | minter | topup | fund <address>  [--send]')
 }
 
 main().catch((e) => {
