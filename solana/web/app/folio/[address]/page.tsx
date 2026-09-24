@@ -7,7 +7,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
 import { dateLabel, lockLabel } from '@/components/folio-row'
 import { FolioActivity } from '@/components/folio-activity'
-import { SellSheet } from '@/components/sell-sheet'
+import { HoldingActions } from '@/components/holding-actions'
+import { OwnerTools } from '@/components/owner-tools'
 import { ShareBasket } from '@/components/share-basket'
 import { ShareLink } from '@/components/share-link'
 import { AppHeader, HardRule, Kicker, MonoLabel, Screen, SideNote, Spinner, StatusChip, Stop } from '@/components/ui'
@@ -163,10 +164,10 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
                   onClick={() => setSelling(h.symbol)}
                   className="mt-2 border border-accent px-2 py-1 font-mono text-[9.5px] uppercase tracking-monolabel text-accent"
                 >
-                  Sell
+                  Sell or move
                 </button>
               )}
-              {canSell && selling === h.symbol && <SellSheet folio={folio.address} holding={h} onDone={() => setSelling(null)} />}
+              {canSell && selling === h.symbol && <HoldingActions folio={folio.address} holding={h} onDone={() => setSelling(null)} />}
             </div>
           ))}
         </div>
@@ -178,6 +179,8 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
         )}
 
         {folio.holdings.length > 0 && <ShareBasket folio={folio.address} />}
+
+        {isOwner && !folio.escrowed && <OwnerTools folio={folio} />}
 
         <FolioActivity folio={folio.address} />
 
