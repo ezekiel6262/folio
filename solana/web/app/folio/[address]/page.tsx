@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
 import { dateLabel, lockLabel } from '@/components/folio-row'
+import { FolioActivity } from '@/components/folio-activity'
 import { SellSheet } from '@/components/sell-sheet'
 import { ShareBasket } from '@/components/share-basket'
 import { ShareLink } from '@/components/share-link'
@@ -151,6 +152,10 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
                   {h.growthPct < 5
                     ? `+${h.growthPct.toFixed(2)}% of these shares came from reinvested dividends`
                     : `includes a ${(1 + h.growthPct / 100).toFixed(2)}× split by the issuer`}
+                  {h.lastChange &&
+                    ` · last ${h.lastChange.pct >= 5 ? `${(1 + h.lastChange.pct / 100).toFixed(2)}× split` : `+${h.lastChange.pct.toFixed(3)}%`} on ${new Date(
+                      h.lastChange.at * 1000,
+                    ).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`}
                 </p>
               )}
               {canSell && selling !== h.symbol && (
@@ -173,6 +178,8 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
         )}
 
         {folio.holdings.length > 0 && <ShareBasket folio={folio.address} />}
+
+        <FolioActivity folio={folio.address} />
 
         {isSender && (
           <div className="mt-7 border border-rule-mid p-4">

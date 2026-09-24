@@ -54,6 +54,8 @@ export type StockMarket = {
    * depends on the size.
    */
   growthPct: number
+  /** The most recent dividend or split the issuer applied, and when it took effect. */
+  lastChange?: { pct: number; at: number }
   /** A multiplier change the issuer has scheduled but not yet reached. */
   scheduled?: { multiplier: number; effectiveAt: number }
 }
@@ -111,14 +113,14 @@ async function jupiterPrices(mints: string[]): Promise<Record<string, JupPrice>>
 
 type ScaledState = { multiplier?: string; newMultiplier?: string; newMultiplierEffectiveTimestamp?: number | string }
 
-async function multipliers(): Promise<Record<string, Pick<StockMarket, 'multiplier' | 'scheduled'>>> {
+async function multipliers(): Promise<Record<string, Pick<StockMarket, 'multiplier' | 'scheduled' | 'lastChange'>>> {
   // The demo cluster has its own mints; their multipliers were fixed when they were made.
   if (isDemo()) {
     return Object.fromEntries(Object.entries(demoMultipliers()).map(([symbol, multiplier]) => [symbol, { multiplier }]))
   }
   const infos = await connection.getMultipleParsedAccounts(STOCKS.map((s) => new PublicKey(s.mint)))
   const now = Math.floor(Date.now() / 1000)
-  const out: Record<string, Pick<StockMarket, 'multiplier' | 'scheduled'>> = {}
+  const out: Record<string, Pick<StockMarket, 'multiplier' | 'scheduled' | 'lastChange'>> = {}
 
   STOCKS.forEach((s, i) => {
     const data = infos.value[i]?.data
@@ -129,9 +131,16 @@ async function multipliers(): Promise<Record<string, Pick<StockMarket, 'multipli
     const next = Number(scaled?.newMultiplier ?? current)
     const at = Number(scaled?.newMultiplierEffectiveTimestamp ?? 0)
 
-    // Once the scheduled time passes, the new multiplier is the live one.
-    if (at && now >= at) out[s.symbol] = { multiplier: next }
-    else out[s.symbol] = { multiplier: current, scheduled: at && next !== current ? { multiplier: next, effectiveAt: at } : undefined }
+    // Once the scheduled time passes, the new multiplier is the live one, and the step it
+    // took is the last dividend (or split) holders received.
+    if (at && now >= at) {
+      out[s.symbol] = {
+        multiplier: next,
+        lastChange: current > 0 && next !== current ? { pct: (next / current - 1) * 100, at } : undefined,
+      }
+    } else {
+      out[s.symbol] = { multiplier: current, scheduled: at && next !== current ? { multiplier: next, effectiveAt: at } : undefined }
+    }
   })
   return out
 }
@@ -199,6 +208,7 @@ export async function getMarket(): Promise<Market> {
       tokenUsd: price.usd,
       shareUsd: price.usd,
       growthPct: (multiplier - 1) * 100,
+      lastChange: mults[s.symbol]?.lastChange,
       referenceUsd: ref?.usd,
       referenceSource: ref?.source,
       premiumPct: ref ? (price.usd / ref.usd - 1) * 100 : undefined,

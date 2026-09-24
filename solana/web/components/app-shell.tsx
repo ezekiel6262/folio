@@ -12,9 +12,10 @@ const NAV = [
   { href: '/create', label: 'New folio', mark: '03' },
   { href: '/earn', label: 'Earn on cash', mark: '04' },
   { href: '/borrow', label: 'Borrow', mark: '05' },
-  { href: '/deposit', label: 'Add money', mark: '06' },
-  { href: '/withdraw', label: 'Send out', mark: '07' },
-  { href: '/developers', label: 'Developers & agents', mark: '08' },
+  { href: '/plans', label: 'Plans & watches', mark: '06' },
+  { href: '/deposit', label: 'Add money', mark: '07' },
+  { href: '/withdraw', label: 'Send out', mark: '08' },
+  { href: '/developers', label: 'Developers & agents', mark: '09' },
 ]
 
 /**

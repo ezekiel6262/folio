@@ -31,6 +31,11 @@ link that works even if the recipient has never used crypto. Once you own it, yo
 4–5% a year and your shares can back a dollar loan — both inside Folio, without visiting another
 protocol.
 
+Every folio carries its own history, read from the chain rather than from Folio's records, and
+each holding shows the dividends already reinvested into it. You can ask to be told when a price
+moves, or set an amount to invest on a rhythm; Folio shows both when you open it and never buys
+anything you have not confirmed.
+
 It covers listed companies (xStocks) and private ones before IPO (PreStocks), and it is honest
 about the parts people usually hide: what your fill costs against the real share price or last
 private valuation, the issuer's 1% transfer fee, the dividends reinvested into your share count,
@@ -104,6 +109,10 @@ Show the transaction on Solana Explorer, then open the claim link in the second 
 > "My cousin opens the link. She's never used crypto. She signs up with an email, and the folio
 > is hers — locked until the date I chose. If she tries to take the shares out early, the
 > program refuses."
+
+**2:10–2:20 — Its own history.** Scroll to "What has happened" on the folio page.
+> "Every folio keeps its own history, and each line is a transaction anyone can open. Folio is
+> not the only witness to what you own."
 
 **2:20–3:00 — Put it to work.** Back on the live app: Earn, then Borrow.
 > "Cash that's waiting earns 4.4% a year. And the shares I own can back a dollar loan — up to

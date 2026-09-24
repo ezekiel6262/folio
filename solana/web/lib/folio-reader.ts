@@ -23,6 +23,7 @@ export type Holding = {
   shareUsd: number
   /** Percent of this holding that came from reinvested dividends or a split. */
   growthPct: number
+  lastChange?: { pct: number; at: number }
   valueUsd: number
   weightPct: number
 }
@@ -74,6 +75,7 @@ async function withHoldings(folios: FolioAccount[]): Promise<FolioView[]> {
             shares,
             shareUsd,
             growthPct: m?.growthPct ?? 0,
+            lastChange: m?.lastChange,
             valueUsd: shares * shareUsd,
             weightPct: 0,
           }

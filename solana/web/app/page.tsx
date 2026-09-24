@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
 import { FolioRow } from '@/components/folio-row'
+import { Reminders } from '@/components/reminders'
 import { AppHeader, CurrencyChip, HairRule, HardRule, Kicker, MonoLabel, Screen, SideNote, Spinner, Stop } from '@/components/ui'
 import { STOCK_BY_SYMBOL, STOCKS } from '@/lib/assets'
 import { formatLocal } from '@/lib/currencies'
@@ -158,6 +159,7 @@ function SignedIn() {
 
   return (
     <Screen wide>
+      <Reminders />
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-14">
       <div>
       <MonoLabel>Ready to invest</MonoLabel>
