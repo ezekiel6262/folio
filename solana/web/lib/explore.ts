@@ -71,11 +71,33 @@ function hexToBase58(hex: string): string {
   return out || '1'
 }
 
+/**
+ * One card per thing said. Two people who published the same basket with the same sentence
+ * are the same idea twice over, so the shelf keeps whoever said it first and lets the copy
+ * count speak for the rest. Say it differently and you get your own card.
+ */
+function sameIdeaOnce(shelf: ListingAccount[]): ListingAccount[] {
+  const first = new Map<string, ListingAccount>()
+  for (const listing of shelf) {
+    const idea = `${listing.policyHash}:${listing.note.trim().toLowerCase()}`
+    const held = first.get(idea)
+    if (!held || listing.listedAt < held.listedAt) first.set(idea, listing)
+  }
+  return [...first.values()].sort((a, b) => b.listedAt - a.listedAt)
+}
+
+async function countInto(counted: Map<string, number>, policyHash: string): Promise<number> {
+  const n = await copiesOf(policyHash).catch(() => 1)
+  counted.set(policyHash, n)
+  return n
+}
+
 export async function exploreCards(limit = 24): Promise<ExploreCard[]> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.value
 
-  const shelf = (await listings()).slice(0, limit)
+  const shelf = sameIdeaOnce(await listings()).slice(0, limit)
   const cards: ExploreCard[] = []
+  const counted = new Map<string, number>()
 
   for (const listing of shelf) {
     const folio: FolioView | null = await readFolio(listing.folio).catch(() => null)
@@ -89,7 +111,7 @@ export async function exploreCards(limit = 24): Promise<ExploreCard[]> {
       listedAt: listing.listedAt,
       madeAt: folio.createdAt,
       totalUsd: folio.totalUsd,
-      copies: await copiesOf(listing.policyHash).catch(() => 1),
+      copies: counted.get(listing.policyHash) ?? (await countInto(counted, listing.policyHash)),
       holdings: folio.holdings.map((h) => ({ symbol: h.symbol, display: h.display, weightPct: h.weightPct, shares: h.shares })),
     })
   }

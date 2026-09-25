@@ -238,14 +238,19 @@ async function fund(target: string, live: boolean) {
   ixs.push(createAtaIdempotentIx(kp.publicKey, owner, usdc))
   ixs.push(mintToIx(usdc, ata(owner, usdc), kp.publicKey, BigInt(FUND_USDC * 10 ** DEMO_USDC.decimals)))
 
-  for (const s of demo.stocks.slice(0, 2)) {
+  for (const s of demo.stocks) {
     const mint = new PublicKey(s.mint)
     ixs.push(createAtaIdempotentIx(kp.publicKey, owner, mint))
     // Raw units, so what the holder sees is this times the multiplier.
     ixs.push(mintToIx(mint, ata(owner, mint), kp.publicKey, BigInt(Math.round((FUND_SHARES / s.multiplier) * 10 ** s.decimals))))
   }
 
-  await send(`fund ${target.slice(0, 6)}… with ${FUND_USDC} demo USDC and ${FUND_SHARES} shares each of two companies`, ixs, [kp], live)
+  await send(
+    `fund ${target.slice(0, 6)}… with ${FUND_USDC} demo USDC and ${FUND_SHARES} shares each of ${demo.stocks.length} companies`,
+    ixs,
+    [kp],
+    live,
+  )
 }
 
 /**
