@@ -6,10 +6,10 @@ import { useQuery } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
 import { AppHeader, HardRule, Kicker, MonoLabel, Screen, SideNote, Spinner, Stop } from '@/components/ui'
 import { STOCKS, type Stock } from '@/lib/assets'
-import { formatLocal } from '@/lib/currencies'
+import { formatLocal, formatMove } from '@/lib/currencies'
 
 type MarketResponse = {
-  stocks: Record<string, { shareUsd: number; referenceUsd?: number; premiumPct?: number; growthPct?: number }>
+  stocks: Record<string, { shareUsd: number; referenceUsd?: number; premiumPct?: number; growthPct?: number; change24hPct?: number }>
   valuations: Record<string, { markValuation: number; impliedValuation: number; markPrice: number }>
   lending: Record<string, { maxLtv: number; borrowApy: number }>
 }
@@ -216,8 +216,15 @@ function Row({
         </span>
       </span>
 
-      <span className="figure w-24 text-right text-[13.5px] text-ink lg:w-32">
-        {m ? formatLocal(usdToLocal(m.shareUsd), code) : <span className="inline-block h-3 w-14 bg-rule-mid/50" />}
+      <span className="w-24 text-right lg:w-32">
+        <span className="figure block text-[13.5px] text-ink">
+          {m ? formatLocal(usdToLocal(m.shareUsd), code) : <span className="inline-block h-3 w-14 bg-rule-mid/50" />}
+        </span>
+        {m?.change24hPct != null && (
+          <span className={`figure mt-0.5 block text-[10px] ${m.change24hPct >= 0 ? 'text-accent' : 'text-body-soft'}`}>
+            {formatMove(m.change24hPct)} today
+          </span>
+        )}
       </span>
 
       <span className="w-full text-right lg:w-52">

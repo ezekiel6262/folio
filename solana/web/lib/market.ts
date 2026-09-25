@@ -46,6 +46,8 @@ export type StockMarket = {
   referenceSource?: string
   /** Market price against the reference: +13 means buyers pay 13% above it. */
   premiumPct?: number
+  /** How the token has moved in the last 24 hours, in percent. */
+  change24hPct?: number
   multiplier: number
   /**
    * How much a token has grown since it was issued, in percent. xStocks reinvest dividends
@@ -82,14 +84,17 @@ let fxCache: Cached<Record<string, number>> | null = null
 const MARKET_TTL = 20_000
 const FX_TTL = 10 * 60_000
 
-type JupPrice = { usd: number; reference?: { usd: number; source: string } }
+type JupPrice = { usd: number; change24hPct?: number; reference?: { usd: number; source: string } }
 
 async function jupiterPrices(mints: string[]): Promise<Record<string, JupPrice>> {
   for (const base of JUPITER) {
     try {
       const res = await fetch(`${base}/price/v3?ids=${mints.join(',')}`, { cache: 'no-store' })
       if (!res.ok) continue
-      const json = (await res.json()) as Record<string, { usdPrice?: number; stockData?: { id?: string; price?: number } }>
+      const json = (await res.json()) as Record<
+        string,
+        { usdPrice?: number; priceChange24h?: number; stockData?: { id?: string; price?: number } }
+      >
       return Object.fromEntries(
         Object.entries(json)
           .filter(([, v]) => typeof v?.usdPrice === 'number')
@@ -97,6 +102,7 @@ async function jupiterPrices(mints: string[]): Promise<Record<string, JupPrice>>
             mint,
             {
               usd: Number(v.usdPrice),
+              change24hPct: typeof v.priceChange24h === 'number' ? v.priceChange24h : undefined,
               reference:
                 typeof v.stockData?.price === 'number' && v.stockData.price > 0
                   ? { usd: v.stockData.price, source: v.stockData.id ?? 'issuer' }
@@ -212,6 +218,7 @@ export async function getMarket(): Promise<Market> {
       referenceUsd: ref?.usd,
       referenceSource: ref?.source,
       premiumPct: ref ? (price.usd / ref.usd - 1) * 100 : undefined,
+      change24hPct: price.change24hPct,
       multiplier,
       scheduled,
     }

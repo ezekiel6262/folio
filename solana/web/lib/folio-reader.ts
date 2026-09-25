@@ -24,6 +24,8 @@ export type Holding = {
   /** Percent of this holding that came from reinvested dividends or a split. */
   growthPct: number
   lastChange?: { pct: number; at: number }
+  /** How the company's token has moved in the last 24 hours, in percent. */
+  change24hPct?: number
   valueUsd: number
   weightPct: number
 }
@@ -32,6 +34,8 @@ export type FolioView = FolioAccount & {
   locked: boolean
   holdings: Holding[]
   totalUsd: number
+  /** The basket's move today, weighted by holding. Absent when nothing in it has a price. */
+  change24hPct?: number
 }
 
 const OWNER_OFFSET = 8
@@ -76,6 +80,7 @@ async function withHoldings(folios: FolioAccount[]): Promise<FolioView[]> {
             shareUsd,
             growthPct: m?.growthPct ?? 0,
             lastChange: m?.lastChange,
+            change24hPct: m?.change24hPct,
             valueUsd: shares * shareUsd,
             weightPct: 0,
           }
@@ -83,7 +88,13 @@ async function withHoldings(folios: FolioAccount[]): Promise<FolioView[]> {
       const totalUsd = holdings.reduce((a, h) => a + h.valueUsd, 0)
       for (const h of holdings) h.weightPct = totalUsd > 0 ? (h.valueUsd / totalUsd) * 100 : 0
       holdings.sort((a, b) => b.valueUsd - a.valueUsd)
-      return { ...f, locked: f.unlockAt > now, holdings, totalUsd }
+      // What the companies in the basket did today, weighted by how much of it each one is.
+      // Not a return: it says nothing about what the owner paid, only about the companies.
+      const priced = holdings.filter((h) => typeof h.change24hPct === 'number')
+      const pricedUsd = priced.reduce((a, h) => a + h.valueUsd, 0)
+      const change24hPct =
+        pricedUsd > 0 ? priced.reduce((a, h) => a + (h.change24hPct as number) * (h.valueUsd / pricedUsd), 0) : undefined
+      return { ...f, locked: f.unlockAt > now, holdings, totalUsd, change24hPct }
     })
     .sort((a, b) => b.createdAt - a.createdAt)
 }

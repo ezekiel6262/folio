@@ -655,6 +655,99 @@
       "args": []
     },
     {
+      "name": "list_folio",
+      "docs": [
+        "Put a folio on the public shelf so anyone can see what it holds and copy the idea.",
+        "Opt-in and reversible: without a listing account, a folio is simply not listed.",
+        "What becomes public is the basket and its sentence, never the owner's other holdings."
+      ],
+      "discriminator": [
+        98,
+        31,
+        72,
+        14,
+        121,
+        40,
+        71,
+        58
+      ],
+      "accounts": [
+        {
+          "name": "folio",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "folio"
+          ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "note",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "reclaim",
       "docs": [
         "Return an unclaimed gift to whoever made it, once its window has passed. A",
@@ -1057,6 +1150,90 @@
       ]
     },
     {
+      "name": "unlist_folio",
+      "docs": [
+        "Take it off the shelf again. The deposit goes back to whoever paid it."
+      ],
+      "discriminator": [
+        165,
+        75,
+        156,
+        50,
+        190,
+        198,
+        175,
+        131
+      ],
+      "accounts": [
+        {
+          "name": "folio",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  111,
+                  108,
+                  105,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio.creator",
+                "account": "Folio"
+              },
+              {
+                "kind": "account",
+                "path": "folio.nonce",
+                "account": "Folio"
+              }
+            ]
+          },
+          "relations": [
+            "listing"
+          ]
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "folio"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rent_payer",
+          "writable": true
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "folio"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "withdraw",
       "docs": [
         "Move tokens out of an unlocked folio you own, to any token account you choose.",
@@ -1222,6 +1399,19 @@
         48,
         31
       ]
+    },
+    {
+      "name": "Listing",
+      "discriminator": [
+        218,
+        32,
+        50,
+        73,
+        43,
+        134,
+        26,
+        58
+      ]
     }
   ],
   "events": [
@@ -1278,6 +1468,19 @@
       ]
     },
     {
+      "name": "FolioListed",
+      "discriminator": [
+        237,
+        247,
+        166,
+        22,
+        103,
+        197,
+        216,
+        211
+      ]
+    },
+    {
       "name": "FolioReclaimed",
       "discriminator": [
         250,
@@ -1314,6 +1517,19 @@
         192,
         166,
         192
+      ]
+    },
+    {
+      "name": "FolioUnlisted",
+      "discriminator": [
+        88,
+        230,
+        243,
+        158,
+        99,
+        72,
+        126,
+        157
       ]
     },
     {
@@ -1466,6 +1682,11 @@
       "code": 6021,
       "name": "MathOverflow",
       "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6022,
+      "name": "NoteTooLong",
+      "msg": "That note is longer than 100 characters"
     }
   ],
   "types": [
@@ -1699,6 +1920,22 @@
       }
     },
     {
+      "name": "FolioListed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "FolioReclaimed",
       "type": {
         "kind": "struct",
@@ -1750,6 +1987,68 @@
           {
             "name": "to",
             "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FolioUnlisted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Listing",
+      "docs": [
+        "A folio its owner chose to show publicly. Its absence is the private default, so",
+        "nothing is exposed by forgetting a setting. `owner` sits at byte 40 so a wallet can",
+        "list its own listings with one memcmp, and `policy_hash` lets copies of the same",
+        "basket be counted without reading every folio."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "folio",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "rent_payer",
+            "docs": [
+              "Paid the deposit; the only address it is ever returned to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "policy_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "listed_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "note",
+            "type": "string"
           }
         ]
       }

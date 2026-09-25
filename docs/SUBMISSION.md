@@ -35,8 +35,8 @@ protocol.
 
 A folio is private until its owner decides otherwise. Publishing one writes a separate account
 holding a single sentence, and the Explore page reads those straight from the chain: the basket,
-the sentence, its size and when it was made — never the owner's other holdings, and never their
-gains. Copying takes the idea, not the person: you get your own folio, bought at today's prices,
+the sentence, its size, how its companies moved today and when it was made — never the owner's
+other holdings, and never what they paid or made. Copying takes the idea, not the person: you get your own folio, bought at today's prices,
 in your own name, and nobody is paid for copies. Because a basket carries the hash of the
 sentence that made it, the chain itself can say how many folios came from one idea.
 

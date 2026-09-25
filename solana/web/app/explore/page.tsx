@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
 import { AppHeader, Kicker, Screen, SideNote, Spinner, Stop } from '@/components/ui'
-import { formatLocal } from '@/lib/currencies'
+import { formatLocal, formatMove } from '@/lib/currencies'
 import type { ExploreCard } from '@/lib/explore'
 
 /** The order the handoff gives for basket segments. Label colour flips on the dark ones. */
@@ -76,7 +76,10 @@ export default function ExplorePage() {
                   {card.note && <p className="font-serif text-[17px] leading-[1.3] text-body">“{card.note}”</p>}
                   <p className="t-body-sm">{card.holdings.map((h) => h.display).join(', ')}</p>
                   <p className="figure text-[11px] text-body-mute">
-                    {formatLocal(usdToLocal(card.totalUsd), code)} held in it today
+                    {formatLocal(usdToLocal(card.totalUsd), code)} held in it
+                    {card.change24hPct != null && (
+                      <span className={card.change24hPct >= 0 ? 'text-accent' : 'text-ink'}> · {formatMove(card.change24hPct)} today</span>
+                    )}
                   </p>
                   <div className="mt-auto flex items-center justify-between gap-2 pt-2">
                     <span className="figure text-[10.5px] text-body-mute">
@@ -106,8 +109,8 @@ export default function ExplorePage() {
 
         <div className="mt-8 max-w-[680px]">
           <SideNote>
-            A public folio shows its basket, its sentence, its size and when it was made — never the owner&apos;s other
-            holdings, and never their gains.
+            A public folio shows its basket, its sentence, its size, how its companies moved today and when it was
+            made — never the owner&apos;s other holdings, and never what they paid or made.
             Copying buys at today&apos;s prices, so what you get is not what they got, and nobody is paid for copies.
             Past holdings say nothing about what happens next.
           </SideNote>

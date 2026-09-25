@@ -43,6 +43,8 @@ const built: Record<string, TransactionInstruction> = {
   withdraw: fp.withdrawIx({ folio, mint, owner, destination: dest, amount: 1n }),
   close_vault: fp.closeVaultIx({ folio, mint, owner, rentPayer }),
   close_folio: fp.closeFolioIx({ folio, owner, rentPayer }),
+  list_folio: fp.listFolioIx({ folio, owner, payer, note: 'x' }),
+  unlist_folio: fp.unlistFolioIx({ folio, owner, rentPayer }),
 }
 
 let failed = 0

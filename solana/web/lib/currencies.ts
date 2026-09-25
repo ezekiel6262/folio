@@ -63,3 +63,8 @@ export function formatUsd(amount: number) {
     maximumFractionDigits: Math.abs(amount) < 1 ? 4 : 2,
   }).format(amount)
 }
+
+/** A price move, said the same way everywhere: a true minus sign, two decimals. */
+export function formatMove(pct: number) {
+  return `${pct >= 0 ? '+' : '−'}${Math.abs(pct).toFixed(2)}%`
+}

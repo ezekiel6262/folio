@@ -13,7 +13,7 @@ import { ShareBasket } from '@/components/share-basket'
 import { ShareLink } from '@/components/share-link'
 import { AppHeader, HardRule, Kicker, MonoLabel, Screen, SideNote, Spinner, StatusChip, Stop } from '@/components/ui'
 import { formatShares } from '@/lib/assets'
-import { formatLocal, formatUsd } from '@/lib/currencies'
+import { formatLocal, formatMove, formatUsd } from '@/lib/currencies'
 import { isUserRejection, signAndSubmit } from '@/lib/execute'
 import { useFolioWallet } from '@/lib/wallet'
 import type { FolioView } from '@/lib/folio-reader'
@@ -125,6 +125,12 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
         <p className="figure mt-2 text-[11px] text-body-mute">
           {formatUsd(folio.totalUsd)} · {folio.holdings.length} {folio.holdings.length === 1 ? 'company' : 'companies'} · made {dateLabel(folio.createdAt)}
         </p>
+        {folio.change24hPct != null && (
+          <p className="figure mt-1.5 text-[11px]">
+            <span className={folio.change24hPct >= 0 ? 'text-accent' : 'text-ink'}>{formatMove(folio.change24hPct)}</span>
+            <span className="text-body-mute"> — what these companies did today, not what you have made</span>
+          </p>
+        )}
         <div className="mt-4 flex flex-wrap gap-1.5">
           {folio.escrowed && <StatusChip tone="solid">Waiting to be claimed</StatusChip>}
           {folio.locked && <StatusChip>{lockLabel(folio.unlockAt)}</StatusChip>}
@@ -145,6 +151,7 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
               <div className="mt-1 flex items-baseline justify-between gap-4">
                 <span className="figure text-[10.5px] text-body-mute">
                   {formatShares(h.shares)} sh · {formatUsd(h.shareUsd)} each
+                  {h.change24hPct != null && ` · ${formatMove(h.change24hPct)} today`}
                 </span>
                 <span className="figure text-[10px] text-body-mute">{h.weightPct.toFixed(0)}%</span>
               </div>

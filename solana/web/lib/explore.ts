@@ -29,6 +29,8 @@ export type ExploreCard = {
   listedAt: number
   madeAt: number
   totalUsd: number
+  /** What the companies in it did today, weighted. Never presented as the owner's return. */
+  change24hPct?: number
   copies: number
   holdings: { symbol: string; display: string; weightPct: number; shares: number }[]
 }
@@ -111,6 +113,7 @@ export async function exploreCards(limit = 24): Promise<ExploreCard[]> {
       listedAt: listing.listedAt,
       madeAt: folio.createdAt,
       totalUsd: folio.totalUsd,
+      change24hPct: folio.change24hPct,
       copies: counted.get(listing.policyHash) ?? (await countInto(counted, listing.policyHash)),
       holdings: folio.holdings.map((h) => ({ symbol: h.symbol, display: h.display, weightPct: h.weightPct, shares: h.shares })),
     })

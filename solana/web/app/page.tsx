@@ -7,7 +7,7 @@ import { FolioRow } from '@/components/folio-row'
 import { Reminders } from '@/components/reminders'
 import { AppHeader, CurrencyChip, HairRule, HardRule, Kicker, MonoLabel, Screen, SideNote, Spinner, Stop } from '@/components/ui'
 import { STOCK_BY_SYMBOL, STOCKS } from '@/lib/assets'
-import { formatLocal } from '@/lib/currencies'
+import { formatLocal, formatMove } from '@/lib/currencies'
 import { AccountButton, useFolioWallet } from '@/lib/wallet'
 import type { WalletBalances } from '@/lib/balances'
 import type { FolioView } from '@/lib/folio-reader'
@@ -156,6 +156,11 @@ function SignedIn() {
   const owned = folios.data?.owned ?? []
   const waiting = folios.data?.giftsWaiting ?? []
   const invested = owned.reduce((a, f) => a + f.totalUsd, 0)
+  // Today's move across everything owned, weighted by size. It says what the companies did,
+  // never what the owner has made — Folio does not know what anyone paid.
+  const movedToday = owned.filter((f) => f.change24hPct != null && f.totalUsd > 0)
+  const movedUsd = movedToday.reduce((a, f) => a + f.totalUsd, 0)
+  const todayPct = movedUsd > 0 ? movedToday.reduce((a, f) => a + (f.change24hPct as number) * (f.totalUsd / movedUsd), 0) : null
 
   return (
     <Screen wide>
@@ -197,7 +202,12 @@ function SignedIn() {
       <div className="mt-10">
         <div className="flex items-baseline justify-between">
           <p className="t-label">Your folios</p>
-          <span className="figure text-[11px] text-body-mute">{folios.isLoading ? '··' : formatLocal(usdToLocal(invested), code)}</span>
+          <span className="figure text-[11px] text-body-mute">
+            {folios.isLoading ? '··' : formatLocal(usdToLocal(invested), code)}
+            {todayPct != null && (
+              <span className={todayPct >= 0 ? 'text-accent' : 'text-ink'}> · {formatMove(todayPct)} today</span>
+            )}
+          </span>
         </div>
         <HardRule className="mt-2.5" />
         {folios.isLoading ? (
