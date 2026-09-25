@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Keypair } from '@solana/web3.js'
@@ -49,6 +49,15 @@ export default function DemoPage() {
 
   const holdings = demo.data?.holdings ?? []
   const picks = holdings.filter((h) => chosen[h.symbol])
+
+  // Arriving from the public shelf: the companies of the folio being copied, already ticked.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    const wanted = (q.get('pick') ?? '').split(',').map((p) => p.trim()).filter(Boolean)
+    if (wanted.length) setChosen(Object.fromEntries(wanted.map((symbol) => [symbol, true])))
+    const copied = q.get('name')
+    if (copied) setName(copied.slice(0, 32))
+  }, [])
 
   async function getShares() {
     if (!wallet.address) return

@@ -11,6 +11,16 @@ import type { ExploreCard } from '@/lib/explore'
 const SEGMENTS = ['#111111', '#1a2fd6', '#8f9dff', '#5a5858', '#b5b2b2', '#2a2929', '#d4d2d2']
 
 const short = (a: string) => `${a.slice(0, 4)}…${a.slice(-4)}`
+
+/**
+ * Where copying leads. On a test cluster there is no exchange to buy from, so a copy is made
+ * from the test shares the demo hands out; on mainnet it goes to the ordinary buying flow with
+ * the companies already written in.
+ */
+const copyHref = (card: ExploreCard) =>
+  process.env.NEXT_PUBLIC_CLUSTER === 'devnet'
+    ? `/demo?pick=${encodeURIComponent(card.holdings.map((h) => h.symbol).join(','))}&name=${encodeURIComponent(card.name)}`
+    : `/create?prompt=${encodeURIComponent(card.holdings.map((h) => h.display).join(', '))}`
 const madeOn = (unix: number) => new Date(unix * 1000).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
 
 /**
@@ -73,7 +83,7 @@ export default function ExplorePage() {
                       {card.copies === 1 ? 'first of its kind' : `${card.copies} folios from this idea`}
                     </span>
                     <Link
-                      href={`/create?prompt=${encodeURIComponent(card.holdings.map((h) => h.display).join(', '))}`}
+                      href={copyHref(card)}
                       className="border border-ink bg-ink px-3 py-2 font-sans text-[10.5px] font-bold uppercase tracking-monolabel text-ground no-underline transition-colors hover:border-accent hover:bg-accent"
                     >
                       Copy this folio
