@@ -198,7 +198,9 @@ function Row({
 
   return (
     <Link
-      href={`/create?prompt=${encodeURIComponent(stock.display)}`}
+      // A private company gets its own page: there is no exchange price to check it against,
+      // so the gap to its last round needs explaining before anyone buys.
+      href={privateCo ? `/pre-ipo/${stock.symbol}` : `/create?prompt=${encodeURIComponent(stock.display)}`}
       className="row-hover flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-rule-hair py-3.5 no-underline lg:flex-nowrap"
     >
       <span className="min-w-0 flex-1">
