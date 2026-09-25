@@ -1,14 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
-import { FolioCard, FolioRow } from '@/components/folio-row'
+import { FolioCard, FolioRow, SEGMENTS } from '@/components/folio-row'
 import { Reminders } from '@/components/reminders'
 import { AppHeader, CurrencyChip, HairRule, HardRule, Kicker, MonoLabel, Screen, SideNote, Spinner, Stop } from '@/components/ui'
-import { STOCK_BY_SYMBOL, STOCKS } from '@/lib/assets'
+import { formatShares, STOCK_BY_SYMBOL, STOCKS } from '@/lib/assets'
 import { formatLocal, formatMove, formatUsd } from '@/lib/currencies'
 import { AccountButton, useFolioWallet } from '@/lib/wallet'
+import type { Allocation } from '@/lib/allocator'
 import type { WalletBalances } from '@/lib/balances'
 import type { FolioView } from '@/lib/folio-reader'
 
@@ -64,6 +66,8 @@ function Door() {
         shares in your own name — kept, locked until a date, or given to someone you love.
       </p>
 
+      <TryIt />
+
       <button onClick={login} className="btn-primary mt-7 lg:max-w-[360px]">
         Sign up or sign in
       </button>
@@ -118,6 +122,100 @@ function Door() {
       </div>
       </div>
     </Screen>
+  )
+}
+
+/**
+ * The product, before the sign-up. Type a sentence and Folio reads it into companies and
+ * share counts on the spot — the same allocator the real purchase uses, priced off live
+ * market prices. Nothing is bought and no account is needed; the exact fill is quoted when
+ * there is money to spend.
+ */
+const TRY_EXAMPLES = ['The companies that make the chips', 'Apple, Nvidia and the S&P 500', 'AI companies before they go public']
+
+function TryIt() {
+  const { code, currency, usdToLocal, shareUsd } = useCurrency()
+  const [prompt, setPrompt] = useState(TRY_EXAMPLES[0])
+
+  const demoUsd = 50
+  const demoLocal = useMemo(() => {
+    const n = usdToLocal(demoUsd)
+    if (n < 10) return Math.ceil(n)
+    const p = 10 ** Math.floor(Math.log10(n))
+    return Math.ceil(n / p) * p
+  }, [usdToLocal])
+
+  const { data, isFetching } = useQuery<Allocation>({
+    queryKey: ['try', prompt],
+    queryFn: async () =>
+      (
+        await fetch('/api/allocate', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        })
+      ).json(),
+    staleTime: 5 * 60_000,
+  })
+
+  const lines = data?.lines ?? []
+
+  return (
+    <div className="mt-8 border-2 border-ink p-4 lg:max-w-[520px]">
+      <MonoLabel>Try it — no account</MonoLabel>
+      <input
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value.slice(0, 120))}
+        placeholder="The companies that make the chips"
+        className="field mt-3 !text-[15px]"
+      />
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {TRY_EXAMPLES.map((ex) => (
+          <button
+            key={ex}
+            onClick={() => setPrompt(ex)}
+            className="border border-rule-mid px-2 py-1 text-left font-sans text-[11.5px] text-body-soft transition-colors hover:border-ink hover:bg-ink hover:text-ground"
+          >
+            {ex}
+          </button>
+        ))}
+      </div>
+
+      {lines.length > 0 && (
+        <>
+          <div className="mt-4 flex h-2 w-full">
+            {lines.map((l, i) => (
+              <div key={l.symbol} style={{ width: `${l.weightBps / 100}%`, background: SEGMENTS[i % SEGMENTS.length] }} />
+            ))}
+          </div>
+          <div className="mt-3">
+            {lines.map((l, i) => {
+              const usd = shareUsd[l.symbol]
+              const shares = usd ? ((l.weightBps / 10_000) * demoUsd) / usd : null
+              return (
+                <div key={l.symbol} className="flex items-baseline justify-between gap-4 border-t border-rule-hair py-2 first:border-t-0">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="h-2 w-2 shrink-0" style={{ background: SEGMENTS[i % SEGMENTS.length] }} />
+                    <span className="truncate font-sans text-[13px] text-ink">{l.display}</span>
+                  </span>
+                  <span className="figure shrink-0 text-[11px] text-body-mute">
+                    {(l.weightBps / 100).toFixed(0)}%
+                    {shares != null && ` · ${formatShares(shares)} sh`}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+          <p className="mt-3 font-serif text-[17px] leading-[1.3] text-body">{data?.interpretation}</p>
+        </>
+      )}
+      {!lines.length && !isFetching && data && <p className="t-body-sm mt-4">{data.interpretation}</p>}
+
+      <p className="t-disclaimer mt-3">
+        What {formatLocal(demoLocal, code)} would buy at today&apos;s prices, before fees — {currency.word} is what you are
+        shown, never what is held. The exact fill is quoted before you commit.
+      </p>
+    </div>
   )
 }
 
