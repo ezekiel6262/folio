@@ -5,7 +5,7 @@ import { use, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
-import { dateLabel, lockLabel } from '@/components/folio-row'
+import { dateLabel, lockLabel, SEGMENTS } from '@/components/folio-row'
 import { FolioActivity } from '@/components/folio-activity'
 import { HoldingActions } from '@/components/holding-actions'
 import { OwnerTools } from '@/components/owner-tools'
@@ -19,6 +19,107 @@ import { useFolioWallet } from '@/lib/wallet'
 import type { FolioView } from '@/lib/folio-reader'
 
 const short = (a: string) => `${a.slice(0, 4)}…${a.slice(-4)}`
+
+/** On a test cluster there is no exchange, so adding to a folio has nowhere to buy from. */
+const onTestCluster = process.env.NEXT_PUBLIC_CLUSTER === 'devnet'
+
+/**
+ * The handful of things to do with a folio, side by side rather than scattered down the
+ * page. Each cell is a real capability: what is missing here (selling, moving shares out,
+ * handing it on) belongs to a single holding or is a decision, and lives further down.
+ */
+function ActionBar({
+  folio,
+  isOwner,
+  isSender,
+  reclaimOpen,
+  onReclaim,
+  busy,
+}: {
+  folio: FolioView
+  isOwner: boolean
+  isSender: boolean
+  reclaimOpen: boolean
+  onReclaim: () => void
+  busy: boolean
+}) {
+  const cell = 'flex-1 border-r border-rule-mid px-3 py-3 text-center font-mono text-[9.5px] uppercase tracking-monolabel last:border-r-0'
+  const live = `${cell} text-ink transition-colors hover:bg-ink hover:text-ground no-underline`
+  const dead = `${cell} text-body-mute`
+
+  if (isSender && folio.escrowed) {
+    return (
+      <div className="mt-6 flex border border-ink">
+        <Link href={`/claim/${folio.address}`} className={live}>
+          See what they see
+        </Link>
+        {reclaimOpen ? (
+          <button onClick={onReclaim} disabled={busy} className={live}>
+            {busy ? 'Taking it back…' : 'Take it back'}
+          </button>
+        ) : (
+          <span className={dead}>{folio.reclaimAfter ? `Yours again ${dateLabel(folio.reclaimAfter)}` : 'Theirs to claim'}</span>
+        )}
+      </div>
+    )
+  }
+
+  if (!isOwner) return null
+
+  return (
+    <div className="mt-6 flex border border-ink">
+      {!onTestCluster && (
+        <Link href={`/create?folio=${folio.address}`} className={live}>
+          Add to it
+        </Link>
+      )}
+      {folio.locked ? (
+        <span className={dead} title="A locked folio cannot be pledged: the lock holds the taking out.">
+          Borrow · locked
+        </span>
+      ) : (
+        <Link href="/borrow" className={live}>
+          Borrow against it
+        </Link>
+      )}
+      <a href="#share" className={live}>
+        Share the recipe
+      </a>
+    </div>
+  )
+}
+
+/**
+ * How far a lock has left to run. The folio is already owned and already invested the whole
+ * way along; the only thing the lock holds is the taking out.
+ */
+function LockTimeline({ madeAt, unlockAt }: { madeAt: number; unlockAt: number }) {
+  const now = Math.floor(Date.now() / 1000)
+  const span = Math.max(1, unlockAt - madeAt)
+  const done = Math.min(100, Math.max(0, ((now - madeAt) / span) * 100))
+  const yearsLeft = (unlockAt - now) / (365.25 * 86_400)
+
+  return (
+    <div className="-mx-5 mt-7 bg-ink-void px-5 py-5 lg:mx-0">
+      <p className="font-mono text-[10px] uppercase tracking-monolabel text-accent-dark">Held shut</p>
+      <div className="relative mt-5 h-6">
+        <div className="absolute inset-x-0 top-2.5 h-[2px] bg-[#3a3a3a]" />
+        <div className="absolute left-0 top-2.5 h-[2px] bg-[#8f9dff]" style={{ width: `${done}%` }} />
+        <div className="absolute top-0 h-6 w-[2px] bg-ground" style={{ left: `${done}%` }} />
+      </div>
+      <div className="mt-2 flex items-baseline justify-between gap-4">
+        <span className="figure text-[10px] text-body-dark">made {dateLabel(madeAt)}</span>
+        <span className="figure text-[10px] text-body-dark">opens {dateLabel(unlockAt)}</span>
+      </div>
+      <p className="mt-4 font-sans text-[13px] leading-[1.6] text-body-dark">
+        {yearsLeft >= 1
+          ? `About ${yearsLeft.toFixed(1)} years still to run.`
+          : `Under a year to go — ${Math.max(0, Math.round((unlockAt - now) / 86_400))} days.`}{' '}
+        It is already yours and already invested; dividends land in it the whole way through.
+      </p>
+    </div>
+  )
+}
 
 export default function FolioPage({ params }: { params: Promise<{ address: string }> }) {
   const { address } = use(params)
@@ -137,6 +238,16 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
           {!folio.locked && !folio.escrowed && <StatusChip tone="mute">No lock</StatusChip>}
         </div>
 
+        {folio.holdings.length > 0 && (
+          <div className="mt-5 flex h-2.5 w-full">
+            {folio.holdings.map((h, i) => (
+              <div key={h.mint} style={{ width: `${h.weightPct}%`, background: SEGMENTS[i % SEGMENTS.length] }} />
+            ))}
+          </div>
+        )}
+
+        {(isOwner || isSender) && <ActionBar folio={folio} isOwner={isOwner} isSender={isSender} reclaimOpen={reclaimOpen} onReclaim={reclaim} busy={reclaiming} />}
+
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
         <div>
         <HardRule className="mt-7" />
@@ -185,7 +296,11 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
           </Link>
         )}
 
-        {folio.holdings.length > 0 && <ShareBasket folio={folio.address} />}
+        {folio.holdings.length > 0 && (
+          <div id="share">
+            <ShareBasket folio={folio.address} />
+          </div>
+        )}
 
         {isOwner && !folio.escrowed && <OwnerTools folio={folio} listing={data?.listing} />}
 
@@ -239,7 +354,7 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
               {[
                 ['Owner', folio.owner ? short(folio.owner) : 'Waiting for a claim'],
                 ['Folio', short(folio.address)],
-                ['Chain', 'Solana mainnet'],
+                ['Chain', onTestCluster ? 'Solana devnet · a test cluster' : 'Solana mainnet'],
                 ['Made', dateLabel(folio.createdAt)],
               ].map(([k, v]) => (
                 <div key={k} className="flex items-baseline justify-between gap-4 border-t border-rule-hair py-2 first:border-t-0">
@@ -248,11 +363,18 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
                 </div>
               ))}
             </div>
-            <a href={`https://solscan.io/account/${folio.address}`} target="_blank" rel="noreferrer" className="btn-secondary mt-4 no-underline">
+            <a
+              href={`https://solscan.io/account/${folio.address}${onTestCluster ? '?cluster=devnet' : ''}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secondary mt-4 no-underline"
+            >
               Open on Solscan ↗
             </a>
           </div>
         </div>
+
+        {folio.locked && <LockTimeline madeAt={folio.createdAt} unlockAt={folio.unlockAt} />}
 
         <div className="mt-7 border border-rule-mid p-4">
           <MonoLabel>Dividends and company actions</MonoLabel>

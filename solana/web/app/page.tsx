@@ -3,14 +3,16 @@
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
-import { FolioRow } from '@/components/folio-row'
+import { FolioCard, FolioRow } from '@/components/folio-row'
 import { Reminders } from '@/components/reminders'
 import { AppHeader, CurrencyChip, HairRule, HardRule, Kicker, MonoLabel, Screen, SideNote, Spinner, Stop } from '@/components/ui'
 import { STOCK_BY_SYMBOL, STOCKS } from '@/lib/assets'
-import { formatLocal, formatMove } from '@/lib/currencies'
+import { formatLocal, formatMove, formatUsd } from '@/lib/currencies'
 import { AccountButton, useFolioWallet } from '@/lib/wallet'
 import type { WalletBalances } from '@/lib/balances'
 import type { FolioView } from '@/lib/folio-reader'
+
+type EarnSummary = { earningUsd?: number }
 
 export default function Home() {
   const wallet = useFolioWallet()
@@ -137,6 +139,13 @@ function SignedIn() {
     enabled: Boolean(address),
     refetchInterval: 30_000,
   })
+  // Cash that is out earning is still the owner's money, so the total has to include it.
+  const earning = useQuery<EarnSummary>({
+    queryKey: ['earn-summary', address],
+    queryFn: async () => (await fetch(`/api/earn?owner=${address}`)).json(),
+    enabled: Boolean(address),
+    refetchInterval: 60_000,
+  })
 
   if (!address) {
     return (
@@ -161,19 +170,55 @@ function SignedIn() {
   const movedToday = owned.filter((f) => f.change24hPct != null && f.totalUsd > 0)
   const movedUsd = movedToday.reduce((a, f) => a + f.totalUsd, 0)
   const todayPct = movedUsd > 0 ? movedToday.reduce((a, f) => a + (f.change24hPct as number) * (f.totalUsd / movedUsd), 0) : null
+  const earningUsd = earning.data?.earningUsd ?? 0
+  const everything = invested + investable + earningUsd
+  const share = (usd: number) => (everything > 0 ? (usd / everything) * 100 : 0)
 
   return (
     <Screen wide>
       <Reminders />
+      {waiting.map((f) => (
+        <WaitingGift key={f.address} folio={f} />
+      ))}
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-14">
       <div>
-      <MonoLabel>Ready to invest</MonoLabel>
+      <MonoLabel>Everything you have in Folio</MonoLabel>
       {balances.isLoading ? (
         <div className="mt-2 h-11 w-48 bg-ground-inset" />
       ) : (
-        <p className="t-figure-lg mt-2">{formatLocal(usdToLocal(investable), code)}</p>
+        <p className="t-figure-lg mt-2">{formatLocal(usdToLocal(everything), code)}</p>
       )}
       <p className="figure mt-2 text-[11px] text-body-mute">
+        {formatUsd(everything)}
+        {code !== 'USD' && ` · ${code} is what you are shown, never what is held`}
+      </p>
+
+      {/* Where the money is: owned shares, cash waiting, cash out earning. */}
+      <div className="mt-5 flex h-2.5 w-full lg:max-w-[440px]">
+        <div style={{ width: `${share(invested)}%` }} className="bg-ink" />
+        <div style={{ width: `${share(investable)}%` }} className="bg-accent" />
+        <div style={{ width: `${share(earningUsd)}%` }} className="bg-[#8f9dff]" />
+        {everything === 0 && <div className="w-full bg-rule-mid" />}
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-3 lg:max-w-[440px]">
+        {(
+          [
+            ['Invested', invested, 'bg-ink', '/markets'],
+            ['Ready', investable, 'bg-accent', '/create'],
+            ['Earning', earningUsd, 'bg-[#8f9dff]', '/earn'],
+          ] as [string, number, string, string][]
+        ).map(([label, usd, swatch, href]) => (
+          <Link key={label} href={href} className="no-underline">
+            <span className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 ${swatch}`} />
+              <span className="t-mono-label">{label}</span>
+            </span>
+            <span className="figure mt-1 block text-[13px] text-ink">{formatLocal(usdToLocal(usd), code)}</span>
+          </Link>
+        ))}
+      </div>
+
+      <p className="figure mt-3 text-[11px] text-body-mute">
         {(balances.data?.stablecoins ?? []).map((s) => `${s.units.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${s.symbol}`).join(' · ') ||
           'No stablecoins yet'}
       </p>
@@ -215,7 +260,17 @@ function SignedIn() {
             <div className="h-4 w-40 bg-ground-inset" />
           </div>
         ) : owned.length ? (
-          owned.map((f) => <FolioRow key={f.address} folio={f} />)
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {owned.map((f) => (
+              <FolioCard key={f.address} folio={f} />
+            ))}
+            <Link
+              href="/create"
+              className="flex min-h-[132px] items-center justify-center border border-dashed border-rule-mid text-body-soft no-underline transition-colors hover:border-accent hover:text-accent"
+            >
+              <span className="font-sans text-[13px] font-medium">+ New folio</span>
+            </Link>
+          </div>
         ) : (
           <EmptyState />
         )}
@@ -239,6 +294,26 @@ function SignedIn() {
       </div>
       </div>
     </Screen>
+  )
+}
+
+/**
+ * A gift nobody has opened. It is the one thing in Folio that needs chasing, because the
+ * link is the only key and only the sender still has it.
+ */
+function WaitingGift({ folio }: { folio: FolioView }) {
+  const days = Math.max(0, Math.floor((Date.now() / 1000 - folio.createdAt) / 86_400))
+  return (
+    <div className="-mx-5 mb-6 bg-ink-void px-5 py-4 lg:mx-0">
+      <p className="font-sans text-[13px] leading-[1.55] text-body-dark">
+        <span className="font-serif text-[15px] italic text-accent-dark">Waiting.</span> Nobody has opened{' '}
+        <span className="text-ground">{folio.name || 'your gift'}</span> yet — you sent it{' '}
+        {days === 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`}. The link you saved is the only way in.
+      </p>
+      <Link href={`/claim/${folio.address}`} className="mt-2 inline-block font-mono text-[10px] uppercase tracking-monolabel text-accent-dark no-underline">
+        See what they see →
+      </Link>
+    </div>
   )
 }
 
