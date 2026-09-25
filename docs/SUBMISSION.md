@@ -60,6 +60,9 @@ Say this plainly in the video and the form; it is the difference between a demo 
 
 **On mainnet, right now, at the live URL**
 - Live prices for 16 companies, with the premium over the real share price or last valuation
+- A page for each private company: where the token prices the whole business against its last
+  round, and what the token does not carry (no dividends, no votes, no lending market, 1% to the
+  issuer on every transfer)
 - Live lending terms from Kamino's xStocks market and live cash yields from Jupiter Lend
 - Blinks, the MCP agent server, the developer page, the eligibility gate
 - Every screen, on phone and desktop
@@ -104,6 +107,13 @@ receiver. Speak plainly; let the screen do the work.
 > OpenAI, SpaceX, Anthropic. Every row shows what the token costs and how far that sits from the
 > real thing: Apple within a tenth of a percent of its Nasdaq price, SpaceX 30% below its last
 > private valuation. Nobody else shows you that."
+
+Open SpaceX.
+> "A private company has no exchange price to check, so this page shows the only number there
+> is: the token prices SpaceX at 1.54 trillion, against the 1.95 trillion its last investors
+> paid. That round was months ago — it's a difference of opinion, not a discount. And it says
+> what the token doesn't carry: no dividends, no votes, and 1% to the issuer every time it
+> moves."
 
 Point at the dividends line under a listed company.
 > "And dividends aren't paid in cash here — they're reinvested, so your share count grows. Apple
