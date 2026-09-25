@@ -22,10 +22,15 @@ export const FOLIO_DISC = createHash('sha256').update('account:Folio').digest().
 
 /** 8-byte discriminator + Folio::INIT_SPACE. Unique among this program's accounts. */
 export const FOLIO_ACCOUNT_SIZE = 503
+/** 8-byte discriminator + Listing::INIT_SPACE (folio, owner, rent payer, policy hash, time, bump, note). */
+export const LISTING_ACCOUNT_SIZE = 8 + 32 * 3 + 32 + 8 + 1 + 4 + 100
+export const LISTING_DISC = createHash('sha256').update('account:Listing').digest().subarray(0, 8)
 
 // ------------------------------------------------------------------ addresses
 
 export const configPda = () => PublicKey.findProgramAddressSync([Buffer.from('config')], PROGRAM_ID)[0]
+export const listingPda = (folio: PublicKey) =>
+  PublicKey.findProgramAddressSync([Buffer.from('listing'), folio.toBuffer()], PROGRAM_ID)[0]
 export const assetPda = (mint: PublicKey) =>
   PublicKey.findProgramAddressSync([Buffer.from('asset'), mint.toBuffer()], PROGRAM_ID)[0]
 export function folioPda(creator: PublicKey, nonce: bigint) {
@@ -180,6 +185,53 @@ export function closeVaultIx(a: { folio: PublicKey; mint: PublicKey; owner: Publ
 
 export function closeFolioIx(a: { folio: PublicKey; owner: PublicKey; rentPayer: PublicKey }) {
   return ix([m(a.folio, false, true), m(a.rentPayer, false, true), m(a.owner, true, false)], disc('close_folio'))
+}
+
+/** Put a folio on the public shelf. Opt-in, and reversible by `unlistFolioIx`. */
+export function listFolioIx(a: { folio: PublicKey; owner: PublicKey; payer: PublicKey; note: string }) {
+  if (Buffer.byteLength(a.note, 'utf8') > 400) throw new Error('That note is too long')
+  return ix(
+    [
+      m(a.folio, false, false),
+      m(listingPda(a.folio), false, true),
+      m(a.owner, true, false),
+      m(a.payer, true, true),
+      m(SYSTEM, false, false),
+    ],
+    Buffer.concat([disc('list_folio'), str(a.note)]),
+  )
+}
+
+export function unlistFolioIx(a: { folio: PublicKey; owner: PublicKey; rentPayer: PublicKey }) {
+  return ix(
+    [m(a.folio, false, false), m(listingPda(a.folio), false, true), m(a.rentPayer, false, true), m(a.owner, true, false)],
+    disc('unlist_folio'),
+  )
+}
+
+export type ListingAccount = { address: string; folio: string; owner: string; rentPayer: string; policyHash: string; listedAt: number; note: string }
+
+/** Byte layout of the Rust `Listing` struct, after its 8-byte discriminator. */
+export function decodeListing(address: PublicKey, data: Buffer): ListingAccount | null {
+  if (data.length < LISTING_ACCOUNT_SIZE || !data.subarray(0, 8).equals(LISTING_DISC)) return null
+  let o = 8
+  const key = () => {
+    const k = new PublicKey(data.subarray(o, o + 32))
+    o += 32
+    return k.toBase58()
+  }
+  const folio = key()
+  const owner = key()
+  const rentPayer = key()
+  const policyHash = data.subarray(o, o + 32).toString('hex')
+  o += 32
+  const listedAt = Number(data.readBigInt64LE(o))
+  o += 8
+  o += 1 // bump
+  const noteLen = data.readUInt32LE(o)
+  o += 4
+  const note = data.subarray(o, o + noteLen).toString('utf8')
+  return { address: address.toBase58(), folio, owner, rentPayer, policyHash, listedAt, note }
 }
 
 /** Associated token account, created only if missing, funded by `payer`. */

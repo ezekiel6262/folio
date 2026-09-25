@@ -58,7 +58,7 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
     if (m) setLinkSecret(m[1])
   }, [])
 
-  const { data, isLoading } = useQuery<{ folio?: FolioView; error?: string }>({
+  const { data, isLoading } = useQuery<{ folio?: FolioView; listing?: { note: string } | null; error?: string }>({
     queryKey: ['folio', address],
     queryFn: async () => (await fetch(`/api/folio/${address}`)).json(),
     refetchInterval: 30_000,
@@ -180,7 +180,7 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
 
         {folio.holdings.length > 0 && <ShareBasket folio={folio.address} />}
 
-        {isOwner && !folio.escrowed && <OwnerTools folio={folio} />}
+        {isOwner && !folio.escrowed && <OwnerTools folio={folio} listing={data?.listing} />}
 
         <FolioActivity folio={folio.address} />
 

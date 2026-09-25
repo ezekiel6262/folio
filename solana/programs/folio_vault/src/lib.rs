@@ -26,9 +26,13 @@ pub const MAX_NAME_LEN: usize = 40;
 /// Distinct companies one folio may hold, so every folio stays enumerable and bounded.
 pub const MAX_ASSETS: usize = 8;
 
+/// The sentence behind a basket, kept short enough to read at a glance.
+pub const MAX_NOTE_LEN: usize = 100;
+
 pub const CONFIG_SEED: &[u8] = b"config";
 pub const ASSET_SEED: &[u8] = b"asset";
 pub const FOLIO_SEED: &[u8] = b"folio";
+pub const LISTING_SEED: &[u8] = b"listing";
 
 #[program]
 pub mod folio_vault {
@@ -225,6 +229,33 @@ pub mod folio_vault {
         let previous = folio.owner;
         folio.owner = new_owner;
         emit!(FolioTransferred { folio: folio.key(), from: previous, to: new_owner });
+        Ok(())
+    }
+
+    /// Put a folio on the public shelf so anyone can see what it holds and copy the idea.
+    /// Opt-in and reversible: without a listing account, a folio is simply not listed.
+    /// What becomes public is the basket and its sentence, never the owner's other holdings.
+    pub fn list_folio(ctx: Context<ListFolio>, note: String) -> Result<()> {
+        require!(note.chars().count() <= MAX_NOTE_LEN, FolioError::NoteTooLong);
+        let folio = &ctx.accounts.folio;
+        require!(!folio.escrowed, FolioError::Escrowed);
+
+        let listing = &mut ctx.accounts.listing;
+        listing.folio = folio.key();
+        listing.owner = folio.owner;
+        listing.rent_payer = ctx.accounts.payer.key();
+        listing.policy_hash = folio.policy_hash;
+        listing.listed_at = Clock::get()?.unix_timestamp;
+        listing.bump = ctx.bumps.listing;
+        listing.note = note;
+
+        emit!(FolioListed { folio: folio.key(), owner: folio.owner });
+        Ok(())
+    }
+
+    /// Take it off the shelf again. The deposit goes back to whoever paid it.
+    pub fn unlist_folio(ctx: Context<UnlistFolio>) -> Result<()> {
+        emit!(FolioUnlisted { folio: ctx.accounts.folio.key() });
         Ok(())
     }
 
@@ -467,6 +498,51 @@ pub struct OwnerOnly<'info> {
 }
 
 #[derive(Accounts)]
+pub struct ListFolio<'info> {
+    #[account(
+        seeds = [FOLIO_SEED, folio.creator.as_ref(), &folio.nonce.to_le_bytes()],
+        bump = folio.bump,
+        has_one = owner @ FolioError::NotOwner,
+    )]
+    pub folio: Account<'info, Folio>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + Listing::INIT_SPACE,
+        seeds = [LISTING_SEED, folio.key().as_ref()],
+        bump,
+    )]
+    pub listing: Account<'info, Listing>,
+    pub owner: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UnlistFolio<'info> {
+    #[account(
+        seeds = [FOLIO_SEED, folio.creator.as_ref(), &folio.nonce.to_le_bytes()],
+        bump = folio.bump,
+        has_one = owner @ FolioError::NotOwner,
+    )]
+    pub folio: Account<'info, Folio>,
+    #[account(
+        mut,
+        close = rent_payer,
+        seeds = [LISTING_SEED, folio.key().as_ref()],
+        bump = listing.bump,
+        has_one = folio,
+        constraint = listing.rent_payer == rent_payer.key() @ FolioError::WrongRentPayer,
+    )]
+    pub listing: Account<'info, Listing>,
+    /// CHECK: only ever credited, and only the address the listing recorded.
+    #[account(mut)]
+    pub rent_payer: UncheckedAccount<'info>,
+    pub owner: Signer<'info>,
+}
+
+#[derive(Accounts)]
 pub struct Withdraw<'info> {
     #[account(
         seeds = [FOLIO_SEED, folio.creator.as_ref(), &folio.nonce.to_le_bytes()],
@@ -604,6 +680,24 @@ impl Folio {
     }
 }
 
+/// A folio its owner chose to show publicly. Its absence is the private default, so
+/// nothing is exposed by forgetting a setting. `owner` sits at byte 40 so a wallet can
+/// list its own listings with one memcmp, and `policy_hash` lets copies of the same
+/// basket be counted without reading every folio.
+#[account]
+#[derive(InitSpace)]
+pub struct Listing {
+    pub folio: Pubkey,
+    pub owner: Pubkey,
+    /// Paid the deposit; the only address it is ever returned to.
+    pub rent_payer: Pubkey,
+    pub policy_hash: [u8; 32],
+    pub listed_at: i64,
+    pub bump: u8,
+    #[max_len(100)]
+    pub note: String,
+}
+
 // ------------------------------------------------------------------ events
 
 #[event]
@@ -611,6 +705,17 @@ pub struct AssetConfigured {
     pub mint: Pubkey,
     pub allowed: bool,
     pub cap: u64,
+}
+
+#[event]
+pub struct FolioListed {
+    pub folio: Pubkey,
+    pub owner: Pubkey,
+}
+
+#[event]
+pub struct FolioUnlisted {
+    pub folio: Pubkey,
 }
 
 #[event]
@@ -725,4 +830,6 @@ pub enum FolioError {
     WrongRentPayer,
     #[msg("Arithmetic overflow")]
     MathOverflow,
+    #[msg("That note is longer than 100 characters")]
+    NoteTooLong,
 }

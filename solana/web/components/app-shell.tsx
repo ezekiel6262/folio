@@ -9,13 +9,14 @@ import { useFolioWallet } from '@/lib/wallet'
 const NAV = [
   { href: '/', label: 'Portfolio', mark: '01' },
   { href: '/markets', label: 'Markets', mark: '02' },
-  { href: '/create', label: 'New folio', mark: '03' },
-  { href: '/earn', label: 'Earn on cash', mark: '04' },
-  { href: '/borrow', label: 'Borrow', mark: '05' },
-  { href: '/plans', label: 'Plans & watches', mark: '06' },
-  { href: '/deposit', label: 'Add money', mark: '07' },
-  { href: '/withdraw', label: 'Send out', mark: '08' },
-  { href: '/developers', label: 'Developers & agents', mark: '09' },
+  { href: '/explore', label: 'Explore folios', mark: '03' },
+  { href: '/create', label: 'New folio', mark: '04' },
+  { href: '/earn', label: 'Earn on cash', mark: '05' },
+  { href: '/borrow', label: 'Borrow', mark: '06' },
+  { href: '/plans', label: 'Plans & watches', mark: '07' },
+  { href: '/deposit', label: 'Add money', mark: '08' },
+  { href: '/withdraw', label: 'Send out', mark: '09' },
+  { href: '/developers', label: 'Developers & agents', mark: '10' },
 ]
 
 /**

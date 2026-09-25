@@ -72,6 +72,10 @@ const cases: [string, VersionedTransaction, boolean][] = [
   ['create_folio with Folio as creator (position 2)', tx([...budget(), ixOf(P.folioVault, [acct(any()), acct(any()), acct(FEE_PAYER, true), userSigns], disc('create_folio'))]), false],
   ['close_vault refunding Folio (position 3)', tx([...budget(), ixOf(P.folioVault, [acct(any()), acct(any(), false, false), acct(any()), acct(FEE_PAYER), userSigns], disc('close_vault'))]), true],
   ['close_vault with Folio as owner (position 4)', tx([...budget(), ixOf(P.folioVault, [acct(any()), acct(any(), false, false), acct(any()), acct(attacker), acct(FEE_PAYER, true, false)], disc('close_vault'))]), false],
+  ['list_folio with Folio as payer (position 3)', tx([...budget(), ixOf(P.folioVault, [acct(any()), acct(any()), userSigns, acct(FEE_PAYER, true)], disc('list_folio'))]), true],
+  ['list_folio with Folio as the owner', tx([...budget(), ixOf(P.folioVault, [acct(any()), acct(any()), acct(FEE_PAYER, true), userSigns], disc('list_folio'))]), false],
+  ['unlist_folio refunding Folio (position 2)', tx([...budget(), ixOf(P.folioVault, [acct(any()), acct(any()), acct(FEE_PAYER), userSigns], disc('unlist_folio'))]), true],
+  ['unlist_folio with Folio as the owner', tx([...budget(), ixOf(P.folioVault, [acct(any()), acct(any()), acct(attacker), acct(FEE_PAYER, true, false)], disc('unlist_folio'))]), false],
   ['withdraw naming Folio as destination', tx([...budget(), ixOf(P.folioVault, [acct(any()), acct(any(), false, false), acct(any()), acct(FEE_PAYER), userSigns], disc('withdraw'))]), false],
 ]
 

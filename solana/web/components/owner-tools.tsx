@@ -14,11 +14,12 @@ import type { FolioView } from '@/lib/folio-reader'
  * longer, or close it once it is empty. Kept together, below the everyday actions, because
  * each one is a decision rather than a habit.
  */
-export function OwnerTools({ folio }: { folio: FolioView }) {
+export function OwnerTools({ folio, listing }: { folio: FolioView; listing?: { note: string } | null }) {
   const wallet = useFolioWallet()
   const router = useRouter()
   const queryClient = useQueryClient()
-  const [open, setOpen] = useState<'hand' | 'lock' | null>(null)
+  const [open, setOpen] = useState<'hand' | 'lock' | 'publish' | null>(null)
+  const [note, setNote] = useState('')
   const [recipient, setRecipient] = useState('')
   const [until, setUntil] = useState('')
   const [busy, setBusy] = useState(false)
@@ -67,6 +68,13 @@ export function OwnerTools({ folio }: { folio: FolioView }) {
           Hand it to someone
         </button>
         <button
+          onClick={() => (listing ? run({ action: 'unpublish' }, 'Private again.') : setOpen(open === 'publish' ? null : 'publish'))}
+          disabled={busy}
+          className="border border-rule-mid px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-monolabel text-body-soft hover:border-ink"
+        >
+          {listing ? 'Make it private again' : 'Show it publicly'}
+        </button>
+        <button
           onClick={() => setOpen(open === 'lock' ? null : 'lock')}
           className="border border-rule-mid px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-monolabel text-body-soft hover:border-ink"
         >
@@ -82,6 +90,36 @@ export function OwnerTools({ folio }: { folio: FolioView }) {
           </button>
         )}
       </div>
+
+      {listing && (
+        <p className="t-body-sm mt-3">
+          On the public shelf as “{listing.note}”. People can see what it holds and copy the idea; they cannot see
+          anything else you own, and they get their own folio at today&apos;s prices.
+        </p>
+      )}
+
+      {open === 'publish' && (
+        <div className="mt-4">
+          <MonoLabel>Say in a line what this folio is</MonoLabel>
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value.slice(0, 100))}
+            placeholder="The companies that make the chips"
+            className="field mt-2 !text-[15px]"
+          />
+          <div className="mt-1 flex items-baseline justify-between">
+            <p className="t-disclaimer">Shown with the basket and the date. Your other holdings stay private.</p>
+            <span className="figure text-[10px] text-body-mute">{String(note.length).padStart(2, '0')}/100</span>
+          </div>
+          <button
+            onClick={() => run({ action: 'publish', note }, 'It is on the shelf.')}
+            disabled={busy || !note.trim()}
+            className="btn-primary mt-3 !min-h-[44px]"
+          >
+            {busy ? 'Publishing…' : 'Show it publicly'}
+          </button>
+        </div>
+      )}
 
       {open === 'hand' && (
         <div className="mt-4">

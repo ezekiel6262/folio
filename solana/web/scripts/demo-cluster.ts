@@ -226,7 +226,11 @@ async function mints(live: boolean) {
 async function fund(target: string, live: boolean) {
   const demo = load()
   if (!demo) throw new Error('Run `mints --send` first')
-  const kp = deployer()
+  // Minting moved to the faucet key once `minter --send` ran; before that it is the deployer.
+  const faucet = resolve(root, 'solana/.keys/demo-minter.json')
+  const kp = existsSync(faucet)
+    ? Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(faucet, 'utf8'))))
+    : deployer()
   const owner = new PublicKey(target)
   const ixs: TransactionInstruction[] = []
 

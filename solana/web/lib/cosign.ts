@@ -73,6 +73,7 @@ const anchorDisc = (name: string) =>
 const PAYER_POSITION: Record<string, number> = {
   [anchorDisc('create_folio')]: 3, // config, folio, creator, payer
   [anchorDisc('deposit')]: 7, // config, folio, asset, mint, depositor_token, vault, depositor, payer
+  [anchorDisc('list_folio')]: 3, // folio, listing, owner, payer
 }
 
 /**
@@ -83,6 +84,7 @@ const PAYER_POSITION: Record<string, number> = {
 const REFUND_POSITION: Record<string, number> = {
   [anchorDisc('close_vault')]: 3, // folio, mint, vault, rent_payer
   [anchorDisc('close_folio')]: 1, // folio, rent_payer
+  [anchorDisc('unlist_folio')]: 2, // folio, listing, rent_payer
 }
 
 /** Admin instructions are never sponsored, whoever signs them. */

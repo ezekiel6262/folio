@@ -8,7 +8,7 @@
 
 use anchor_lang::prelude::{pubkey, Clock, Pubkey};
 use anchor_lang::{AccountDeserialize, InstructionData, ToAccountMetas};
-use folio_vault::{accounts as acc, instruction as ix, Folio, ADMIN};
+use folio_vault::{accounts as acc, instruction as ix, Folio, Listing, ADMIN};
 use litesvm::LiteSVM;
 use solana_account::Account;
 use solana_instruction::{AccountMeta, Instruction};
@@ -133,6 +133,9 @@ fn asset_pda(mint: &Pubkey) -> Pubkey {
 fn folio_pda(creator: &Pubkey, nonce: u64) -> Pubkey {
     Pubkey::find_program_address(&[b"folio", creator.as_ref(), &nonce.to_le_bytes()], &folio_vault::ID).0
 }
+fn listing_pda(folio: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[b"listing", folio.as_ref()], &folio_vault::ID).0
+}
 fn ata(owner: &Pubkey, mint: &Pubkey) -> Pubkey {
     Pubkey::find_program_address(&[owner.as_ref(), TOKEN_2022.as_ref(), mint.as_ref()], &ATA_PROGRAM).0
 }
@@ -252,6 +255,28 @@ fn ix_extend(folio: &Pubkey, owner: &Pubkey, new_unlock_at: i64) -> Instruction 
     program_ix(
         acc::OwnerOnly { folio: *folio, owner: *owner }.to_account_metas(None),
         ix::ExtendLock { new_unlock_at }.data(),
+    )
+}
+
+fn ix_list(folio: &Pubkey, owner: &Pubkey, payer: &Pubkey, note: &str) -> Instruction {
+    program_ix(
+        acc::ListFolio {
+            folio: *folio,
+            listing: listing_pda(folio),
+            owner: *owner,
+            payer: *payer,
+            system_program: SYSTEM,
+        }
+        .to_account_metas(None),
+        ix::ListFolio { note: note.to_string() }.data(),
+    )
+}
+
+fn ix_unlist(folio: &Pubkey, owner: &Pubkey, rent_payer: &Pubkey) -> Instruction {
+    program_ix(
+        acc::UnlistFolio { folio: *folio, listing: listing_pda(folio), rent_payer: *rent_payer, owner: *owner }
+            .to_account_metas(None),
+        ix::UnlistFolio {}.data(),
     )
 }
 
@@ -624,6 +649,49 @@ fn a_folio_can_be_handed_on_and_its_lock_travels_with_it() {
     assert_eq!(folio(&env.svm, &key).owner, bob);
     let dest = ata(&bob, &AAPLX);
     expect_err(send(&mut env.svm, &[ix_withdraw(&key, &AAPLX, &bob, &dest, 1)], &env.fee, &[&env.bob]), "Locked");
+}
+
+#[test]
+fn a_folio_is_private_until_its_owner_puts_it_on_the_shelf() {
+    let mut env = setup();
+    let key = alice_keeps(&mut env, 1, 0, SHARE / 10);
+    let (alice, bob, fee) = (env.alice.pubkey(), env.bob.pubkey(), env.fee.pubkey());
+
+    // Nothing is listed by default: privacy is the absence of an account, not a setting.
+    assert!(env.svm.get_account(&listing_pda(&key)).map(|a| a.data.is_empty()).unwrap_or(true));
+
+    // Only its owner may list it.
+    expect_err(
+        send(&mut env.svm, &[ix_list(&key, &bob, &fee, "someone else's folio")], &env.fee, &[&env.bob]),
+        "NotOwner",
+    );
+
+    send(&mut env.svm, &[ix_list(&key, &alice, &fee, "Apple, and nothing clever")], &env.fee, &[&env.alice]).unwrap();
+    let data = env.svm.get_account(&listing_pda(&key)).expect("listing").data;
+    let listing = Listing::try_deserialize(&mut data.as_slice()).expect("listing decodes");
+    assert_eq!(listing.folio, key);
+    assert_eq!(listing.owner, alice);
+    assert_eq!(listing.policy_hash, POLICY);
+    assert_eq!(listing.note, "Apple, and nothing clever");
+
+    // Taking it off the shelf returns the deposit to whoever paid it.
+    let before = lamports(&env.svm, &fee);
+    send(&mut env.svm, &[ix_unlist(&key, &alice, &fee)], &env.fee, &[&env.alice]).unwrap();
+    assert!(env.svm.get_account(&listing_pda(&key)).map(|a| a.data.is_empty()).unwrap_or(true));
+    assert!(lamports(&env.svm, &fee) > before);
+}
+
+#[test]
+fn a_listing_note_is_bounded() {
+    let mut env = setup();
+    let key = alice_keeps(&mut env, 1, 0, SHARE / 10);
+    let (alice, fee) = (env.alice.pubkey(), env.fee.pubkey());
+    let too_long = "x".repeat(101);
+    expect_err(
+        send(&mut env.svm, &[ix_list(&key, &alice, &fee, &too_long)], &env.fee, &[&env.alice]),
+        "NoteTooLong",
+    );
+    send(&mut env.svm, &[ix_list(&key, &alice, &fee, &"y".repeat(100))], &env.fee, &[&env.alice]).unwrap();
 }
 
 #[test]

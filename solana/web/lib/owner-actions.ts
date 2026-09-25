@@ -2,7 +2,8 @@ import 'server-only'
 import { PublicKey } from '@solana/web3.js'
 import { FEE_PAYER } from './assets'
 import { budget, compile } from './buy'
-import { closeFolioIx, extendLockIx, transferFolioIx } from './folio-program'
+import { closeFolioIx, extendLockIx, listFolioIx, transferFolioIx, unlistFolioIx } from './folio-program'
+import { listingFor } from './explore'
 import { readFolio } from './folio-reader'
 import { connection } from './market'
 
@@ -40,6 +41,38 @@ export async function buildExtendLock(a: { owner: string; folio: string; newUnlo
   if (!(a.newUnlockAt > folio.unlockAt)) throw new Error('A lock can only be moved further out')
   if (a.newUnlockAt * 1000 < Date.now()) throw new Error('Choose a date in the future')
   return one(extendLockIx({ folio: new PublicKey(a.folio), owner: new PublicKey(a.owner), newUnlockAt: a.newUnlockAt }))
+}
+
+/**
+ * Show a folio publicly. The listing is its own account, so a folio nobody published has
+ * none: privacy is the default state rather than a setting somebody has to find.
+ */
+export async function buildPublish(a: { owner: string; folio: string; note: string }) {
+  await ownedBy(a.folio, a.owner)
+  const note = a.note.trim().slice(0, 100)
+  if (!note) throw new Error('Say in a line what this folio is')
+  return one(
+    listFolioIx({
+      folio: new PublicKey(a.folio),
+      owner: new PublicKey(a.owner),
+      payer: new PublicKey(FEE_PAYER),
+      note,
+    }),
+  )
+}
+
+/** Take it off the shelf. The deposit goes back to whoever paid it. */
+export async function buildUnpublish(a: { owner: string; folio: string }) {
+  await ownedBy(a.folio, a.owner)
+  const listing = await listingFor(a.folio)
+  if (!listing) throw new Error('That folio is not public')
+  return one(
+    unlistFolioIx({
+      folio: new PublicKey(a.folio),
+      owner: new PublicKey(a.owner),
+      rentPayer: new PublicKey(listing.rentPayer),
+    }),
+  )
 }
 
 /** Closing an empty folio returns its deposit to whoever paid it — Folio, not the owner. */

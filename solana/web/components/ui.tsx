@@ -11,19 +11,32 @@ import { useCurrency } from './currency-context'
  * library, so arrows and bullets are Unicode set in mono.
  */
 
-/** A folio is a folded sheet: two leaves, with an accent spine cutting edge to edge. */
-export function Logo({ size = 18 }: { size?: number }) {
+/**
+ * The mark: an ink tile, the f as one stroke, and the crossbar cutting edge to edge.
+ * Never rounded, never recoloured; on dark grounds the tile and stroke swap.
+ */
+export function Logo({ size = 18, onDark = false }: { size?: number; onDark?: boolean }) {
+  // Below 20px the strokes thicken so the shape survives.
+  const stroke = size < 20 ? 3 : 2.4
+  const bar = size < 20 ? 2.8 : 2.2
   return (
-    <svg width={size} height={size} viewBox="0 0 20 20" role="img" aria-label="Folio" fill="none">
-      <rect x="1" y="1" width="18" height="18" stroke="#111111" strokeWidth="2" />
-      <rect x="9" y="0" width="2" height="20" fill="#1a2fd6" />
+    <svg width={size} height={size} viewBox="0 0 24 24" role="img" aria-label="Folio" fill="none">
+      <rect width="24" height="24" fill={onDark ? '#fcfcfc' : '#111111'} />
+      <path
+        d="M17.4 6.1C16.9 4.7 15.3 4.1 14 4.6C12.8 5.1 12.4 6.4 12.2 7.8L10.6 18.6C10.4 19.9 9.8 20.6 8.6 20.7C7.9 20.8 7.3 20.5 6.9 20"
+        stroke={onDark ? '#111111' : '#FCFCFC'}
+        strokeWidth={stroke}
+        strokeLinecap="butt"
+        fill="none"
+      />
+      <rect x="0" y="10" width="24" height={bar} fill={onDark ? '#1a2fd6' : '#8F9DFF'} />
     </svg>
   )
 }
 
 export function Wordmark({ size = 15 }: { size?: number }) {
   return (
-    <span className="font-sans font-bold uppercase tracking-[0.04em] text-ink" style={{ fontSize: size }}>
+    <span className="font-sans font-extrabold uppercase tracking-[0.02em] text-ink" style={{ fontSize: size }}>
       Folio<span className="text-accent">.</span>
     </span>
   )
