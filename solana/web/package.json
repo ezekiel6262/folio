@@ -10,7 +10,8 @@
     "check:cosign": "npx -y tsx --conditions=react-server scripts/check-cosign.ts",
     "check:idl": "npx -y tsx --conditions=react-server scripts/check-idl.ts",
     "admin": "npx -y tsx scripts/admin.ts",
-    "demo": "npx -y tsx scripts/demo-cluster.ts"
+    "demo": "npx -y tsx scripts/demo-cluster.ts",
+    "check:policy": "npx -y tsx --conditions=react-server scripts/check-policy.ts"
   },
   "dependencies": {
     "@kamino-finance/klend-sdk": "^12.0.0",
