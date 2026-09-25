@@ -11,6 +11,19 @@ import { formatLocal } from '@/lib/currencies'
 import { useFolioWallet } from '@/lib/wallet'
 import type { WalletBalances } from '@/lib/balances'
 
+/** One numbered thing to get right, with everything it needs underneath it. */
+function Step({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-8 border-t border-rule-hair pt-5 first-of-type:border-t-0">
+      <div className="flex items-baseline gap-3">
+        <span className="font-mono text-[10px] tracking-monolabel text-accent">{n}</span>
+        <h2 className="t-cardtitle">{title}</h2>
+      </div>
+      {children}
+    </section>
+  )
+}
+
 /**
  * Add money. For now the door is stablecoins sent on Solana; cards and bank transfers
  * come later. The one thing that goes wrong here is the network, so it is stated as
@@ -79,11 +92,48 @@ export default function DepositPage() {
           <Stop />
         </h1>
         <p className="t-body mt-5">
-          This is your account address. Send any of the stablecoins below to it from an exchange
-          or another wallet, and it shows up here in {code}.
+          Three things have to match: the coin, the network, and the address. Get the network wrong
+          and the money does not arrive here — that is the one mistake worth slowing down for.
         </p>
 
-        <div className="mt-6 border-2 border-ink p-4">
+        <Step n="01" title="Pick a stablecoin">
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {STABLECOINS.map((s) => (
+              <span
+                key={s.symbol}
+                className={`flex items-center gap-1.5 border px-2 py-1 font-mono text-[10px] uppercase tracking-monolabel ${
+                  s.primary ? 'border-ink text-ink' : 'border-rule-mid text-body-soft'
+                }`}
+              >
+                {s.symbol}
+                {s.primary && <span className="text-accent">· most used</span>}
+              </span>
+            ))}
+          </div>
+          <p className="t-disclaimer mt-3">
+            Anything else sent to this address is not counted and may not be recoverable through Folio.
+          </p>
+        </Step>
+
+        <Step n="02" title="Send it on Solana">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="border border-ink bg-ink px-2.5 py-1 font-mono text-[10px] uppercase tracking-monolabel text-ground">
+              Solana
+            </span>
+            {['Ethereum', 'Base', 'Tron', 'BNB Chain', 'Polygon'].map((n) => (
+              <span key={n} className="font-mono text-[10px] uppercase tracking-monolabel text-body-mute line-through">
+                {n}
+              </span>
+            ))}
+          </div>
+          <p className="t-body-sm mt-3">
+            Exchanges ask which network to withdraw on. The same coin sent on any of the crossed-out
+            ones will not arrive here, and Folio cannot fetch it back.
+          </p>
+        </Step>
+
+        <Step n="03" title="Send to this address">
+        <div className="mt-3 border-2 border-ink p-4">
           <MonoLabel>Your address</MonoLabel>
           {address ? (
             <>
@@ -114,31 +164,24 @@ export default function DepositPage() {
           </button>
         </div>
 
-        <div className="mt-5">
-          <SideNote>
-            Choose the <strong className="text-ink">Solana</strong> network when you send. The same
-            coins sent on Ethereum, Base, Tron or BNB Chain will not arrive here.
-          </SideNote>
-        </div>
+        </Step>
 
-        <p className="t-label mt-9">Accepted</p>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {STABLECOINS.map((s) => (
-            <span key={s.symbol} className="border border-rule-mid px-2 py-1 font-mono text-[10px] uppercase tracking-monolabel text-body-soft">
-              {s.symbol}
-            </span>
-          ))}
-        </div>
-        <p className="t-disclaimer mt-3">
-          Anything else sent to this address is not counted and may not be recoverable through Folio.
-        </p>
-
-        <div className="mt-9 border-t border-rule-hair pt-4">
-          <MonoLabel>In your account now</MonoLabel>
+        <div className="mt-8 border border-rule-mid p-4">
+          <span className="flex items-center gap-2">
+            <span className="flex h-2 w-2 animate-pulse bg-accent" />
+            <MonoLabel>Watching for money</MonoLabel>
+          </span>
           <p className="figure mt-2 text-[22px] font-medium text-ink">
             {investable == null ? '··' : formatLocal(usdToLocal(investable), code)}
           </p>
-          <p className="t-disclaimer mt-1">Checking every few seconds.</p>
+          <p className="t-disclaimer mt-1">In your account now, checked every few seconds.</p>
+        </div>
+
+        <div className="mt-5">
+          <SideNote>
+            Folio never holds your money on your behalf: this address is your own account, and what
+            arrives there stays yours whatever happens to Folio.
+          </SideNote>
         </div>
 
         {(investable ?? 0) > 0 && (
