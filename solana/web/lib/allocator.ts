@@ -1,5 +1,6 @@
 import 'server-only'
 import { createHash } from 'node:crypto'
+import { canonicalJson } from './canonical'
 import { ALLOWED_SYMBOLS, MAX_COMPANIES, STOCKS, type Stock } from './assets'
 
 /**
@@ -415,22 +416,7 @@ function describe(
   return s
 }
 
-/**
- * Canonical JSON: keys sorted at every level, so the same policy always produces the same
- * bytes. It has to be done by hand — JSON.stringify's replacer-array form filters nested
- * objects to the same key list, which silently emptied `weights` and left the hash blind to
- * the very split it was meant to commit to.
- */
-export function canonicalJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`
-  if (value && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .filter(([, v]) => v !== undefined)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(',')}}`
-  }
-  return JSON.stringify(value) ?? 'null'
-}
+export { canonicalJson }
 
 /** Canonical JSON, sha256, hex. The same 32 bytes go on-chain as the folio's policy_hash. */
 export function hashPolicy(policy: Policy): string {

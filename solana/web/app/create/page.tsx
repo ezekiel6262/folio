@@ -12,6 +12,7 @@ import { FlowHeader, HardRule, Kicker, MonoLabel, Screen, Spinner, Stop } from '
 import { formatShares } from '@/lib/assets'
 import { formatLocal } from '@/lib/currencies'
 import { isUserRejection, signAndSubmit, SubmitError, toBase64Url, type Progress } from '@/lib/execute'
+import { rememberPolicy } from '@/lib/policies'
 import { useFolioWallet } from '@/lib/wallet'
 import type { Allocation } from '@/lib/allocator'
 import type { WalletBalances } from '@/lib/balances'
@@ -124,6 +125,11 @@ export default function CreatePage() {
       })
 
       await signAndSubmit(built.transactions, wallet.signTransaction, { onProgress: setProgress, accessToken: wallet.getAccessToken })
+
+      // The chain keeps only a hash of the sentence that built this folio. Keeping the
+      // sentence itself on this device is what lets the folio offer to put itself back in
+      // balance later; the hash is what proves it is the right one.
+      rememberPolicy(built.folio, allocation.policy)
 
       // The link's secret travels in the fragment, which the browser never sends to a server.
       router.replace(link ? `/folio/${built.folio}#k=${toBase64Url(link.secretKey)}` : `/folio/${built.folio}?created=1`)

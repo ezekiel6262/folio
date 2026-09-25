@@ -11,7 +11,9 @@
     "check:idl": "npx -y tsx --conditions=react-server scripts/check-idl.ts",
     "admin": "npx -y tsx scripts/admin.ts",
     "demo": "npx -y tsx scripts/demo-cluster.ts",
-    "check:policy": "npx -y tsx --conditions=react-server scripts/check-policy.ts"
+    "check:policy": "npx -y tsx --conditions=react-server scripts/check-policy.ts",
+    "check:rebalance": "npx -y tsx --conditions=react-server scripts/check-rebalance.ts",
+    "check": "npm run -s check:idl && npm run -s check:cosign && npm run -s check:policy && npm run -s check:rebalance"
   },
   "dependencies": {
     "@kamino-finance/klend-sdk": "^12.0.0",

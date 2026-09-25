@@ -9,6 +9,7 @@ import { dateLabel, lockLabel, SEGMENTS } from '@/components/folio-row'
 import { FolioActivity } from '@/components/folio-activity'
 import { HoldingActions } from '@/components/holding-actions'
 import { OwnerTools } from '@/components/owner-tools'
+import { RebalanceCard } from '@/components/rebalance-card'
 import { ShareBasket } from '@/components/share-basket'
 import { ShareLink } from '@/components/share-link'
 import { AppHeader, HardRule, Kicker, MonoLabel, Screen, SideNote, Spinner, StatusChip, Stop } from '@/components/ui'
@@ -301,6 +302,8 @@ export default function FolioPage({ params }: { params: Promise<{ address: strin
             <ShareBasket folio={folio.address} />
           </div>
         )}
+
+        {isOwner && !folio.escrowed && <RebalanceCard folio={folio} />}
 
         {isOwner && !folio.escrowed && <OwnerTools folio={folio} listing={data?.listing} />}
 
