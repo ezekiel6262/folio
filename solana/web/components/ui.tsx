@@ -99,8 +99,11 @@ export function AppHeader({ right }: { right?: ReactNode }) {
   )
 }
 
-/** Flow header: back, title, and a step marker on the right. */
-export function FlowHeader({ title, step }: { title: string; step?: string }) {
+/**
+ * Flow header: back, title, a step marker on the right, and — when the flow has steps — a
+ * bar under it saying how much of the flow is behind you.
+ */
+export function FlowHeader({ title, step, at, of: total }: { title: string; step?: string; at?: number; of?: number }) {
   const router = useRouter()
   return (
     <header className="sticky top-0 z-20 border-b-2 border-ink bg-ground">
@@ -115,6 +118,13 @@ export function FlowHeader({ title, step }: { title: string; step?: string }) {
         <span className="t-cardtitle flex-1">{title}</span>
         {step && <span className="font-mono text-[10px] uppercase tracking-monolabel text-accent">{step}</span>}
       </div>
+      {at != null && total != null && total > 1 && (
+        <div className="mx-auto flex w-full gap-1 px-5 pb-2 lg:max-w-[760px] lg:px-10">
+          {Array.from({ length: total }, (_, i) => (
+            <span key={i} className={`h-[3px] flex-1 ${i < at ? 'bg-accent' : 'bg-rule-hair'}`} />
+          ))}
+        </div>
+      )}
     </header>
   )
 }

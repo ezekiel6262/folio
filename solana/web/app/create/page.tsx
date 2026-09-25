@@ -192,7 +192,12 @@ export default function CreatePage() {
 
   return (
     <>
-      <FlowHeader title={topUp ? 'Add to folio' : 'New folio'} step={step} />
+      <FlowHeader
+        title={topUp ? 'Add to folio' : 'New folio'}
+        step={step}
+        at={stage === 'compose' ? 1 : stage === 'preview' ? 2 : 3}
+        of={topUp ? 2 : 3}
+      />
       <Screen>
         {stage === 'compose' && (
           <div>

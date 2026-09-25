@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useCurrency } from './currency-context'
+import { SEGMENTS } from './folio-row'
 import { HardRule, MonoLabel } from './ui'
 import { formatShares, STOCK_BY_SYMBOL } from '@/lib/assets'
 import { formatLocal, formatUsd } from '@/lib/currencies'
@@ -18,6 +19,11 @@ export function AllocationPreview({ allocation, plan }: { allocation: Allocation
   const { code, usdToLocal } = useCurrency()
   const [open, setOpen] = useState<number | null>(null)
 
+  // The guaranteed floor, as one number: how far below the quote the worst allowed fill sits.
+  const quoted = plan.legs.reduce((a, l) => a + l.shares * l.fillShareUsd, 0)
+  const floor = plan.legs.reduce((a, l) => a + l.minShares * l.fillShareUsd, 0)
+  const worstCasePct = quoted > 0 ? Math.max(0, (1 - floor / quoted) * 100) : 0
+
   return (
     <div>
       <MonoLabel>What we understood</MonoLabel>
@@ -31,6 +37,22 @@ export function AllocationPreview({ allocation, plan }: { allocation: Allocation
             {plan.amountPayUnits.toLocaleString(undefined, { maximumFractionDigits: 2 })} {plan.payWith}
           </span>
         </span>
+      </div>
+
+      <div className="mt-5 flex h-7 w-full">
+        {plan.legs.map((leg, i) => (
+          <div
+            key={leg.symbol}
+            style={{ width: `${leg.weightBps / 100}%`, background: SEGMENTS[i % SEGMENTS.length] }}
+            className="flex items-center justify-center"
+          >
+            {leg.weightBps >= 1200 && (
+              <span className={`font-mono text-[9.5px] tracking-monolabel ${i === 2 || i > 3 ? 'text-ink' : 'text-ground'}`}>
+                {(leg.weightBps / 100).toFixed(0)}%
+              </span>
+            )}
+          </div>
+        ))}
       </div>
 
       <HardRule className="mt-5" />
@@ -115,15 +137,21 @@ export function AllocationPreview({ allocation, plan }: { allocation: Allocation
         </div>
       )}
 
-      <div className="mt-7 grid grid-cols-2 border border-ink">
+      <div className="mt-7 grid grid-cols-3 border border-ink">
         <div className="border-r border-ink p-3.5">
           <MonoLabel>Cost to get in</MonoLabel>
           <p className="figure mt-1.5 text-[18px] text-ink">{Math.max(0, plan.totalCostPct).toFixed(2)}%</p>
+          <p className="t-disclaimer mt-1">{formatLocal(usdToLocal((Math.max(0, plan.totalCostPct) / 100) * plan.spendUsd), code)}</p>
         </div>
-        <div className="p-3.5">
+        <div className="border-r border-ink p-3.5">
           <MonoLabel>Network fee</MonoLabel>
           <p className="figure mt-1.5 text-[18px] text-ink">Free</p>
           <p className="t-disclaimer mt-1">Folio pays it</p>
+        </div>
+        <div className="p-3.5">
+          <MonoLabel>Worst case</MonoLabel>
+          <p className="figure mt-1.5 text-[18px] text-ink">{worstCasePct <= 0.005 ? 'None' : `−${worstCasePct.toFixed(2)}%`}</p>
+          <p className="t-disclaimer mt-1">Or nothing is bought</p>
         </div>
       </div>
 
