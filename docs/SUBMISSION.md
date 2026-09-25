@@ -117,10 +117,12 @@ public", amount 30, show the review screen.
 
 **1:40–2:20 — The gift, on a real cluster.** Switch to https://folio-solana-demo.vercel.app/demo.
 > "Here's the same thing running against a public test network, so you can verify it. I make the
-> folio, locked for a year, as a gift."
+> folio, locked for a year, as a gift. I write who it's for and a line to go with it — both live
+> in the link itself, so Folio never sees either one."
 
 Show the transaction on Solana Explorer, then open the claim link in the second browser profile.
-> "My cousin opens the link. She's never used crypto. She signs up with an email, and the folio
+> "My cousin opens the link. She sees an envelope with her name on it before she sees any
+> numbers. She's never used crypto. She signs up with an email, and the folio
 > is hers — locked until the date I chose. If she tries to take the shares out early, the
 > program refuses."
 

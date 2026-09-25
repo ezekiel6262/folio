@@ -12,6 +12,7 @@ import { buildDemoFolio, demoAssets, demoHoldings } from '../lib/demo'
 import { claimIx, withdrawIx, ata, TOKEN_2022 } from '../lib/folio-program'
 import { readFolio } from '../lib/folio-reader'
 import { budget, compile } from '../lib/buy'
+import { toBase64Url } from '../lib/execute'
 import { connection } from '../lib/market'
 
 const root = resolve(__dirname, '../../..')
@@ -59,7 +60,8 @@ async function main() {
     claimKey: claimKey.publicKey.toBase58(),
     recipient: null,
     policyHashHex: '11'.repeat(32),
-    picks: held.map((h) => ({ symbol: h.symbol, rawAmount: h.rawAmount })),
+    // Three companies are what fits in one transaction alongside the vault deposits.
+    picks: held.slice(0, 3).map((h) => ({ symbol: h.symbol, rawAmount: h.rawAmount })),
   })
   console.log(`   ${link(await sendSigned(fromBase64(built.transaction), [feePayer, giver]))}`)
   console.log(`   folio ${accountLink(built.folio)}`)
@@ -67,6 +69,11 @@ async function main() {
   let folio = await readFolio(built.folio)
   console.log(`   "${folio?.name}" · ${folio?.holdings.map((h) => `${h.shares.toFixed(4)} ${h.display}`).join(', ')}`)
   console.log(`   escrowed: ${folio?.escrowed} · locked until ${new Date((folio?.unlockAt ?? 0) * 1000).toDateString()}\n`)
+
+  if (process.argv.includes('--stop-at-gift')) {
+    console.log(`   claim link: /claim/${built.folio}#k=${toBase64Url(claimKey.secretKey)}`)
+    return
+  }
 
   console.log('3. The receiver opens the link and claims it')
   const latest = await connection.getLatestBlockhash('confirmed')

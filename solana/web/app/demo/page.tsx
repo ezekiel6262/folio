@@ -12,6 +12,9 @@ import { useFolioWallet } from '@/lib/wallet'
 type DemoHolding = { symbol: string; display: string; mint: string; decimals: number; multiplier: number; rawAmount: string; shares: number }
 type DemoData = { enabled: boolean; cluster?: string; holdings: DemoHolding[]; error?: string }
 
+/** All of it lands in one confirmation, and one Solana transaction holds three at most. */
+const MOST_AT_ONCE = 3
+
 const LOCKS: [string, number][] = [
   ['No lock', 0],
   ['1 year', 12],
@@ -49,12 +52,13 @@ export default function DemoPage() {
 
   const holdings = demo.data?.holdings ?? []
   const picks = holdings.filter((h) => chosen[h.symbol])
+  const full = picks.length >= MOST_AT_ONCE
 
   // Arriving from the public shelf: the companies of the folio being copied, already ticked.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
     const wanted = (q.get('pick') ?? '').split(',').map((p) => p.trim()).filter(Boolean)
-    if (wanted.length) setChosen(Object.fromEntries(wanted.map((symbol) => [symbol, true])))
+    if (wanted.length) setChosen(Object.fromEntries(wanted.slice(0, MOST_AT_ONCE).map((symbol) => [symbol, true])))
     const copied = q.get('name')
     if (copied) setName(copied.slice(0, 32))
   }, [])
@@ -157,7 +161,10 @@ export default function DemoPage() {
                   <button
                     key={h.symbol}
                     onClick={() => setChosen((c) => ({ ...c, [h.symbol]: !c[h.symbol] }))}
-                    className="flex w-full items-baseline justify-between gap-4 border-b border-rule-hair py-3.5 text-left"
+                    disabled={full && !chosen[h.symbol]}
+                    className={`flex w-full items-baseline justify-between gap-4 border-b border-rule-hair py-3.5 text-left ${
+                      full && !chosen[h.symbol] ? 'opacity-40' : ''
+                    }`}
                   >
                     <span className="flex items-center gap-3">
                       <span aria-hidden="true" className="flex h-4 w-4 items-center justify-center border border-ink bg-white">
@@ -175,6 +182,13 @@ export default function DemoPage() {
                 ))
               ) : (
                 <p className="t-body-sm mt-3">This wallet has no test shares yet.</p>
+              )}
+
+              {full && holdings.length > MOST_AT_ONCE && (
+                <p className="t-body-sm mt-3">
+                  Three at a time. Everything here happens in one confirmation, and three companies
+                  are what fits in one Solana transaction — the same limit the live app has.
+                </p>
               )}
 
               <button onClick={getShares} disabled={funding} className="btn-secondary mt-4 !min-h-[44px]">
