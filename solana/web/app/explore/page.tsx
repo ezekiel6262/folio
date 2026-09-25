@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { useCurrency } from '@/components/currency-context'
-import { AppHeader, Kicker, Screen, SideNote, Spinner, Stop } from '@/components/ui'
+import { lockLabel } from '@/components/folio-row'
+import { AppHeader, Kicker, Screen, SideNote, Spinner, StatusChip, Stop } from '@/components/ui'
 import { formatLocal, formatMove } from '@/lib/currencies'
 import type { ExploreCard } from '@/lib/explore'
 
@@ -71,8 +72,15 @@ export default function ExplorePage() {
                     <span className="figure text-[10.5px] text-accent">made {madeOn(card.madeAt)}</span>
                   </div>
                   <h2 className="font-sans text-[20px] font-bold uppercase leading-[1.04] tracking-screen">
-                    {card.name || 'Untitled'}
+                    <Link href={`/folio/${card.folio}`} className="text-ink no-underline hover:text-accent">
+                      {card.name || 'Untitled'}
+                    </Link>
                   </h2>
+                  {card.unlockAt > 0 && (
+                    <span>
+                      <StatusChip>{lockLabel(card.unlockAt)}</StatusChip>
+                    </span>
+                  )}
                   {card.note && <p className="font-serif text-[17px] leading-[1.3] text-body">“{card.note}”</p>}
                   <p className="t-body-sm">{card.holdings.map((h) => h.display).join(', ')}</p>
                   <p className="figure text-[11px] text-body-mute">

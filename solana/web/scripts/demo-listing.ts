@@ -8,6 +8,7 @@
  *   --name "..."        what the folio is called
  *   --note "..."        the one line the shelf shows
  *   --picks AAPLx,SPYx  which demo companies go in it
+ *   --lock 5            hold it shut for this many years
  *
  * The policy hash is the sentence, hashed — the same thing the real create flow records —
  * so two folios built from one idea can find each other without a database.
@@ -50,6 +51,7 @@ const flag = (name: string, fallback: string) => {
 async function main() {
   const name = flag('name', 'Chips and the index')
   const note = flag('note', 'The companies that make the chips, plus the whole market as ballast.')
+  const lockYears = Number(flag('lock', '0'))
   const picks = flag('picks', '')
     .split(',')
     .map((p) => p.trim())
@@ -65,7 +67,7 @@ async function main() {
   const built = await buildDemoFolio({
     user: owner.publicKey.toBase58(),
     name,
-    unlockAt: 0,
+    unlockAt: lockYears > 0 ? Math.floor(Date.now() / 1000) + Math.round(lockYears * 365.25 * 86_400) : 0,
     claimKey: null,
     recipient: null,
     policyHashHex: createHash('sha256').update(note.trim().toLowerCase()).digest('hex'),
