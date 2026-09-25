@@ -18,8 +18,11 @@ const short = (a: string) => `${a.slice(0, 4)}…${a.slice(-4)}`
  * from the test shares the demo hands out; on mainnet it goes to the ordinary buying flow with
  * the companies already written in.
  */
+const onTestCluster = process.env.NEXT_PUBLIC_CLUSTER === 'devnet'
+const DEMO_SHELF = 'https://folio-solana-demo.vercel.app/explore'
+
 const copyHref = (card: ExploreCard) =>
-  process.env.NEXT_PUBLIC_CLUSTER === 'devnet'
+  onTestCluster
     ? `/demo?pick=${encodeURIComponent(card.holdings.map((h) => h.symbol).join(','))}&name=${encodeURIComponent(card.name)}`
     : `/create?prompt=${encodeURIComponent(card.holdings.map((h) => h.display).join(', '))}`
 const madeOn = (unix: number) => new Date(unix * 1000).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
@@ -107,9 +110,17 @@ export default function ExplorePage() {
         ) : (
           <div className="mt-10 max-w-[560px] border-2 border-ink p-5">
             <p className="t-body-sm">
-              {data?.error ?? 'Nobody has made a folio public yet. Open one of yours and choose “Show it publicly” to be first.'}
+              {data?.error ??
+                (onTestCluster
+                  ? 'Nobody has made a folio public yet. Open one of yours and choose “Show it publicly” to be first.'
+                  : 'The vault is on Solana’s test cluster until its mainnet rent is paid, so the shelf lives there for now. Prices, lending terms, Blinks and the agent server on this page are mainnet and live.')}
             </p>
-            <Link href="/" className="btn-secondary mt-4 no-underline">
+            {!onTestCluster && (
+              <a href={DEMO_SHELF} target="_blank" rel="noreferrer" className="btn-primary mt-4 !min-h-[44px] no-underline">
+                See the shelf on the test cluster ↗
+              </a>
+            )}
+            <Link href="/" className="btn-secondary mt-2 no-underline">
               Your folios
             </Link>
           </div>
