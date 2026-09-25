@@ -3,6 +3,7 @@ import { basketPolicy, describeNames } from '@/lib/actions'
 import { enforceAllowlist, rulesAllocator } from '@/lib/allocator'
 import { STOCKS, STOCK_BY_SYMBOL, type Stock } from '@/lib/assets'
 import { isBlocked } from '@/lib/eligibility'
+import { exploreCards } from '@/lib/explore'
 import { foliosOwnedBy, giftsWaitingFrom, readFolio } from '@/lib/folio-reader'
 import { earnTokens } from '@/lib/earn'
 import { lendingTerms } from '@/lib/lending'
@@ -80,6 +81,16 @@ const TOOLS = [
     name: 'get_folio',
     description: 'One folio: owner, lock, holdings in share-equivalents and USD.',
     inputSchema: { type: 'object', properties: { address: { type: 'string' } }, required: ['address'], additionalProperties: false },
+  },
+  {
+    name: 'list_public_folios',
+    description:
+      'Folios their owners chose to publish: the basket, the one line they wrote, its size, what its companies did today, whether it is held shut, and how many folios came from the same idea. Nothing about what else those owners hold.',
+    inputSchema: {
+      type: 'object',
+      properties: { limit: { type: 'integer', minimum: 1, maximum: 24 } },
+      additionalProperties: false,
+    },
   },
   {
     name: 'get_yields',
@@ -199,6 +210,24 @@ async function callTool(name: string, args: Json, req: Request, origin: string):
         ...f,
         url: `${origin}/folio/${f.address}`,
         holdings: f.holdings.map((h) => ({ symbol: h.symbol, shares: h.shares, share_usd: h.shareUsd, value_usd: h.valueUsd })),
+      }
+    }
+    case 'list_public_folios': {
+      const cards = await exploreCards(Math.min(Number(args.limit ?? 12) || 12, 24))
+      return {
+        folios: cards.map((c) => ({
+          address: c.folio,
+          name: c.name,
+          says: c.note,
+          symbols: c.holdings.map((h) => h.symbol),
+          weights_pct: c.holdings.map((h) => Number(h.weightPct.toFixed(2))),
+          total_usd: c.totalUsd,
+          change_24h_pct: c.change24hPct ?? null,
+          locked_until: c.unlockAt ? new Date(c.unlockAt * 1000).toISOString() : null,
+          folios_from_this_idea: c.copies,
+          url: `${origin}/folio/${c.folio}`,
+        })),
+        note: "Copying one buys at today's prices into the copier's own folio. Nobody is paid for copies, and past holdings say nothing about what happens next.",
       }
     }
     case 'get_yields': {

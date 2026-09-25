@@ -9,6 +9,7 @@ const TOOLS: [string, string][] = [
   ['build_buy_transactions', "Unsigned transactions that buy the basket into a new folio owned by the agent's wallet."],
   ['get_portfolio', "A wallet's folios, holdings and gifts waiting to be claimed."],
   ['get_folio', 'One folio: owner, lock, holdings.'],
+  ['list_public_folios', 'The public shelf: what people published, what it holds and how it moved today.'],
   ['get_yields', 'What cash earns, and what each company can back a loan for.'],
   ['make_buy_link', 'A Blink and web link anyone can use to buy the same basket.'],
 ]
