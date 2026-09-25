@@ -24,6 +24,19 @@ const FILTERS: [Filter, string][] = [
   ['collateral', 'Can back a loan'],
 ]
 
+/**
+ * Whether the US exchanges are open, in New York time. The tokens trade around the clock;
+ * the share price they are measured against does not, and saying so is the difference
+ * between a stale number and a lie.
+ */
+function usMarketOpen(now = new Date()) {
+  const ny = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+  const day = ny.getDay()
+  if (day === 0 || day === 6) return false
+  const minutes = ny.getHours() * 60 + ny.getMinutes()
+  return minutes >= 9 * 60 + 30 && minutes < 16 * 60
+}
+
 function compactUsd(n: number) {
   if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`
   if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`
@@ -63,6 +76,9 @@ export default function MarketsPage() {
     return list
   }, [filter, sort, data])
 
+  // Recomputed on each refetch, which is often enough for a thing that changes twice a day.
+  const marketOpen = useMemo(() => usMarketOpen(), [data])
+
   const cheapest = useMemo(() => {
     const entries = STOCKS.map((s) => ({ s, p: data?.stocks[s.symbol]?.premiumPct })).filter((x) => typeof x.p === 'number')
     return entries.sort((a, b) => (a.p as number) - (b.p as number))[0]
@@ -88,6 +104,16 @@ export default function MarketsPage() {
           Listed US companies and private ones before they go public, priced live in {code}. Every row shows how far
           the token trades from the thing it tracks — and what it can do once you own it.
         </p>
+
+        {!marketOpen && (
+          <div className="-mx-5 mt-7 bg-ink-void px-5 py-4 lg:mx-0">
+            <p className="font-sans text-[13px] leading-[1.55] text-body-dark">
+              <span className="text-accent-dark">US markets are closed.</span> These tokens keep trading every hour of
+              every day, but the share price each row is measured against is the last one the exchange printed — so a gap
+              shown now may simply be the market moving while New York sleeps.
+            </p>
+          </div>
+        )}
 
         <div className="mt-8 grid gap-px border border-ink bg-rule-mid sm:grid-cols-3">
           <Tile label="Cash earns" value={<Link href="/earn" className="no-underline">4%+ a year →</Link>} note="On stablecoins you have not invested" />
